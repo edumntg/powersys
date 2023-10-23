@@ -1,0 +1,19 @@
+Metadata-Version: 2.1
+Name: powersys
+Version: 0.0.2
+Summary: Python package for Power System Analysis, Optimization and Dynamics
+Author-email: Eduardo Montilva <ejmontilvag@gmail.com>
+Project-URL: Homepage, https://github.com/edumntg/powersys
+Project-URL: Bug Tracker, https://github.com/edumntg/powersys/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.11.0
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy==1.26.1
+Requires-Dist: pandas==2.1.1
+Requires-Dist: gekko==1.0.6
+
+# powersys
+Python package for Power System Analysis, Optimization and Dynamics
