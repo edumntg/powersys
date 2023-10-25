@@ -39,6 +39,7 @@ system.load_buses('ieee30_buses.csv')
 system.load_lines('ieee30_lines.csv')
 system.load_gens('ieee30_gens.csv')
 print(str(system))
+
 solver = PowerSystemSolver(system)
 
 # Solve
@@ -51,3 +52,5 @@ input()
 print(gens)
 input()
 print(lines)
+
+print(str(system))
