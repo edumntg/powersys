@@ -44,7 +44,7 @@ solver = PowerSystemSolver(system)
 
 # Solve
 solver.opf()
-bus, gens, lines = solver.opf_results()
+bus, gens, lines = solver.extract_results()
 print("Optimization problem solved. Press enter to continue...")
 input()
 print(bus)
@@ -54,3 +54,5 @@ input()
 print(lines)
 
 print(str(system))
+
+print(solver.m)

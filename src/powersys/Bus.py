@@ -9,8 +9,10 @@ class Bus(object):
         self.Qgen = data[5]
         self.Pload = data[6]
         self.Qload = data[7]
+        self.Vmin = data[8]
+        self.Vmax = data[9]
 
     def __str__(self):
-        return f"{self.id} - [{self.V}V, {self.theta}rads, P={self.Pgen}, Q={self.Qgen}]"
+        return f"{self.id} - [{self.V:.2f}V, {self.theta:.2f}rads, P={self.Pgen:.2f}, Q={self.Qgen:.2f}, Vmin={self.Vmin:.2f}, Vmax={self.Vmax:.2f}]"
 
     
