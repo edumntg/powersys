@@ -8,6 +8,7 @@ from Bus import *
 from Line import *
 from Generator import *
 import pandas as pd
+import numpy as np
 
 # buses_arr = pd.read_excel('../src/examples/3-bus-system/data/IEEE30.xlsx', 'BUS').to_numpy().astype('float64')
 # lines_arr = pd.read_excel('../src/examples/3-bus-system/data/IEEE30.xlsx', 'RAMAS').to_numpy().astype('float64')
@@ -55,4 +56,3 @@ print(lines)
 
 print(str(system))
 
-print(solver.m)

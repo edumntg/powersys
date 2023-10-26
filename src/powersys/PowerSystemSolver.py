@@ -30,8 +30,8 @@ class PowerSystemSolver(object):
         for bus in self.system.buses:
             bus.V = self.V[bus.id][0]
             bus.theta = self.theta[bus.id][0]
-            bus.Pgen = np.sum([self.Pgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
-            bus.Qgen = np.sum([self.Qgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
+            bus.Pgen = self.Pgen_fixed[bus.id][0] + np.sum([self.Pgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
+            bus.Qgen = self.Qgen_fixed[bus.id][0] + np.sum([self.Qgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
 
         for gen in self.system.generators:
             gen.Pgen = self.Pgen[gen.id][0]
@@ -46,7 +46,7 @@ class PowerSystemSolver(object):
             raise "No PowerSystem object declared"
         
         # Construct Ybus
-        if not self.system.Ybus:
+        if self.system.Ybus is None:
             self.system.construct_ybus()
 
         # Construct Pyomo model
@@ -76,8 +76,8 @@ class PowerSystemSolver(object):
         for bus in self.system.buses:
             # Append results as: V, theta, Pload, Qload, Pgen, Qgen
             row = [bus.id, self.V[bus.id][0], self.theta[bus.id][0], bus.Pload, bus.Qload]
-            Pgen = np.sum([self.Pgen[gen.bus][0] for gen in self.system.generators if gen.bus == bus.id])
-            Qgen = np.sum([self.Qgen[gen.bus][0] for gen in self.system.generators if gen.bus == bus.id])
+            Pgen = self.Pgen_fixed[bus.id][0] + np.sum([self.Pgen[gen.bus][0] for gen in self.system.generators if gen.bus == bus.id])
+            Qgen = self.Qgen_fixed[bus.id][0] + np.sum([self.Qgen[gen.bus][0] for gen in self.system.generators if gen.bus == bus.id])
             row += [Pgen, Qgen, bus.Vmin, bus.Vmax]
 
             data.append(row)
@@ -137,6 +137,11 @@ class PowerSystemSolver(object):
             self.__opf_constr_line_Q_tofrom(line, m) for line in self.system.lines
         ])
 
+        # Add constraints for reference buses
+        m.Equations([
+            self.__opf_constr_reference_bus_angle(bus) for bus in self.system.buses if bus.reference
+        ])
+
     def __construct_opf_contraints(self, m):
         # Bus voltage limits
         m.Equations([
@@ -173,11 +178,6 @@ class PowerSystemSolver(object):
         m.Equations([
             self.__opf_constr_line_max_mva_tofrom(line) for line in self.system.lines
         ])
-
-        # Add constraints for reference buses
-        m.Equations([
-            self.__opf_constr_reference_bus_angle(bus) for bus in self.system.buses if bus.reference
-        ])
     
     def __construct_load_flow_constraints(self, m):
         m.Equations([
@@ -194,6 +194,23 @@ class PowerSystemSolver(object):
             self.lg[gen.id] == 1 for gen in self.system.generators
         ])
 
+        # For all buses containing a generator, we assume that bus is PV
+        for bus in self.system.buses:
+            is_pv = False
+            for gen in self.system.generators:
+                if gen.bus == bus.id:
+                    is_pv = True
+                    break
+            
+            if is_pv and not bus.reference:
+                print(bus.id, bus.V)
+                m.Equation(self.V[bus.id] == bus.V)
+
+        # Now, for generators, set P = 0 (so they only supply Q)
+        for gen in self.system.generators:
+            if not self.system.get_bus(gen.bus).reference:
+                m.Equation(self.Pgen[gen.id] == 0.0)
+
     def __construct_optim_model(self, study = 'opf'):
         m = GEKKO(remote = False)
 
@@ -208,10 +225,16 @@ class PowerSystemSolver(object):
 
         # Active power generated
         self.Pgen = m.Array(m.Var, dim = (self.system.n_gens,))
+        self.Pgen_fixed = m.Array(m.Param, dim = (self.system.n_buses,))
+        for bus in self.system.buses:
+            self.Pgen_fixed[bus.id].VALUE = bus.Pgen_fixed
 
         # Reactive power generated
         self.Qgen = m.Array(m.Var, dim = (self.system.n_gens,))
-
+        self.Qgen_fixed = m.Array(m.Param, dim = (self.system.n_buses,))
+        for bus in self.system.buses:
+            self.Qgen_fixed[bus.id].VALUE = bus.Qgen_fixed
+        
         # Flow through lines
         self.Pflow = m.Array(m.Var, dim = (self.system.n_buses, self.system.n_buses))
         self.Qflow = m.Array(m.Var, dim = (self.system.n_buses, self.system.n_buses))
@@ -252,7 +275,7 @@ class PowerSystemSolver(object):
     
     def __opf_constr_kirchoff_P(self, bus):
         Pflow = 0.0
-        Pgen = 0
+        Pgen = self.Pgen_fixed[bus.id]
 
         # Find if there is a generator connected at this bus
         for gen in self.system.generators:
@@ -271,7 +294,7 @@ class PowerSystemSolver(object):
     
     def __opf_constr_kirchoff_Q(self, bus):
         Qflow = 0.0
-        Qgen = 0
+        Qgen = self.Qgen_fixed[bus.id]
 
         # Find if there is a generator connected at this bus
         for gen in self.system.generators:

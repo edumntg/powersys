@@ -62,11 +62,11 @@ class PowerSystem(object):
             self.Ybus[line.to_bus, line.from_bus] -= line.Y() * 1.0/line.a
 
             # Add shunts
-            self.Ybus[line.from_bus, line.from_bus] += 1j*line.B
-            self.Ybus[line.to_bus, line.from_bus] += 1j*line.B
+            self.Ybus[line.from_bus, line.from_bus] += 1j*line.B/2.0
+            self.Ybus[line.to_bus, line.to_bus] += 1j*line.B/2.0
 
-            self.b[line.from_bus, line.to_bus] = line.B
-            self.b[line.to_bus, line.from_bus] = line.B
+            self.b[line.from_bus, line.to_bus] = line.B/2.0
+            self.b[line.to_bus, line.from_bus] = line.B/2.0
             
         self.G = self.Ybus.real
         self.B = self.Ybus.imag
@@ -130,6 +130,26 @@ class PowerSystem(object):
     def load_gens(self, filename):
         if filename.endswith('.csv'):
             return self.load_from_csv(filename, Generator)
+
+    def kron_reduction(self):
+        # This function calculates the cron reduction of the system
+
+        # Ya is a matrix of size (n_gens, n_gens)
+        Ya = self.Ybus[:self.n_gens, :self.n_gens]
+
+        # Yb is a matrix of size (n_gens, n_buses-n_gens)
+        Yb = self.Ybus[:self.n_gens, self.n_gens:]
+
+        # Yc is the transpose of Yb
+        Yc = Yb.T
+
+        # Yd is a matrix that goes from n_gens: and n_gens:
+        Yd = self.Ybus[self.n_gens:, self.n_gens:]
+
+        # Now, calculate Kron eduction
+        Ykron = Ya - Yb@(np.linalg.inv(Yd)@Yc)
+
+        return Ykron
 
     @staticmethod
     def from_pandas(df):
