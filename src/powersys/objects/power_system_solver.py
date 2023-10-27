@@ -1,6 +1,7 @@
-from .power_system import *
+from powersys.objects.power_system import PowerSystem
 from gekko import GEKKO
 import pandas as pd
+import numpy as np
 
 class PowerSystemSolver(object):
 
