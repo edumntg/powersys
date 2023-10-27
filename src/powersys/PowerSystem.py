@@ -1,8 +1,5 @@
 import numpy as np
-from Bus import *
-from Line import *
-from Generator import *
-from object_collection import *
+from powersys import PowerSystem, PowerSystemSolver
 
 class PowerSystem(object):
 
@@ -42,6 +39,9 @@ class PowerSystem(object):
         self.g = None
         self.G = None
         self.B = None
+
+        self.load_flow_solved = False
+        self.Ybus_load = None
     
     @property
     def N(self):
@@ -150,6 +150,22 @@ class PowerSystem(object):
         Ykron = Ya - Yb@(np.linalg.inv(Yd)@Yc)
 
         return Ykron
+
+    def construct_load_ybus(self):
+        # This function creates a Ybus and adds bus loads as impedances
+        if not self.load_flow_solved:
+            raise "You need to perform a Load Flow study first"
+
+        # Now, calculate load impedances at each bus
+        self.Ybus_load = self.Ybus.copy()
+        for bus in self.buses:
+            S = bus.Pload + 1j*bus.Qload;
+            if np.linalg.norm(S) > 0.0:
+                Z = bus.V**2 / np.conj(S)
+
+                self.Ybus_load[bus.id,bus.id] += 1.0 / Z;
+    
+        return self.Ybus_load
 
     @staticmethod
     def from_pandas(df):
