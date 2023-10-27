@@ -1,12 +1,7 @@
 import sys
 sys.path.append('../src/powersys')
 
-from PowerSystem import *
-from PowerSystemSolver import *
-from object_collection import *
-from Bus import *
-from Line import *
-from Generator import *
+from powersys import *
 import pandas as pd
 import numpy as np
 

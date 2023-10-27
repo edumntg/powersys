@@ -1,4 +1,4 @@
-from PowerSystem import *
+from .power_system import *
 from gekko import GEKKO
 import pandas as pd
 

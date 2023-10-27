@@ -8,11 +8,14 @@ src/examples/IEEE30/main.py
 src/powersys/Bus.py
 src/powersys/Generator.py
 src/powersys/Line.py
-src/powersys/PowerSystem.py
-src/powersys/PowerSystemSolver.py
 src/powersys/__init__.py
+src/powersys/bus.py
+src/powersys/generator.py
+src/powersys/line.py
 src/powersys/main.py
 src/powersys/object_collection.py
+src/powersys/power_system.py
+src/powersys/power_system_solver.py
 src/powersys.egg-info/PKG-INFO
 src/powersys.egg-info/SOURCES.txt
 src/powersys.egg-info/dependency_links.txt

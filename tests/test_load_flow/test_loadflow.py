@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../../src/powersys')
 
-from powersys import PowerSystem, PowerSystemSolver
+from powersys import power_system, power_system_solver
 import pandas as pd
 
 # buses_arr = pd.read_excel('../src/examples/3-bus-system/data/IEEE30.xlsx', 'BUS').to_numpy().astype('float64')
@@ -29,7 +29,7 @@ import pandas as pd
 #     'base': 100 # mva
 # }
 # system = PowerSystem(data)
-system = PowerSystem()
+system = power_system()
 system.load_buses('ieee30_buses.csv')
 system.load_lines('ieee30_lines.csv')
 system.load_gens('ieee30_gens.csv')
@@ -38,7 +38,7 @@ system.construct_ybus()
 print(system.Ybus)
 import numpy as np
 np.savetxt('ybus.txt', system.Ybus, delimiter=',', fmt='%.4f')
-solver = PowerSystemSolver(system)
+solver = power_system_solver(system)
 
 # Solve
 solver.loadflow()
