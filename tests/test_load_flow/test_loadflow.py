@@ -1,12 +1,7 @@
 import sys
 sys.path.append('../../src/powersys')
 
-from PowerSystem import *
-from PowerSystemSolver import *
-from object_collection import *
-from Bus import *
-from Line import *
-from Generator import *
+from powersys import PowerSystem, PowerSystemSolver
 import pandas as pd
 
 # buses_arr = pd.read_excel('../src/examples/3-bus-system/data/IEEE30.xlsx', 'BUS').to_numpy().astype('float64')

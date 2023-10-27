@@ -1,5 +1,5 @@
 import numpy as np
-from powersys import PowerSystem, PowerSystemSolver
+from object_collection import ObjectCollection
 
 class PowerSystem(object):
 
