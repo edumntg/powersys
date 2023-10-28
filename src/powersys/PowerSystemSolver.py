@@ -1,4 +1,4 @@
-from powersys.objects.power_system import PowerSystem
+from .PowerSystem import PowerSystem
 from gekko import GEKKO
 import pandas as pd
 import numpy as np
@@ -204,7 +204,6 @@ class PowerSystemSolver(object):
                     break
             
             if is_pv and not bus.reference:
-                print(bus.id, bus.V)
                 m.Equation(self.V[bus.id] == bus.V)
 
         # Now, for generators, set P = 0 (so they only supply Q)

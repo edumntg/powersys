@@ -1,11 +1,14 @@
-from powersys.powersys import *
+from src.powersys import *
 import pandas as pd
 import numpy as np
+import os
+
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 system = PowerSystem()
-system.load_buses('ieee30_buses.csv')
-system.load_lines('ieee30_lines.csv')
-system.load_gens('ieee30_gens.csv')
+system.load_buses(CWD + '/sample_data/ieee30_buses.csv')
+system.load_lines(CWD + '/sample_data/ieee30_lines.csv')
+system.load_gens(CWD + '/sample_data/ieee30_gens.csv')
 
 solver = PowerSystemSolver(system)
 # Solve
