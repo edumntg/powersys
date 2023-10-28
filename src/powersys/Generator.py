@@ -12,6 +12,10 @@ class Generator(object):
         self.Pgen = 0
         self.Qgen = 0
 
+        # Generator values like impedances, reactances, etc
+        self.Ra = data[9]
+        self.Xq = data[10]
+
     def cost(self, P):
         return self.a*P**2 + self.b*P + self.c
     

@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "powersys"
-version = "0.2.5"
+version = "0.3.5"
 authors = [
   { name="Eduardo Montilva", email="ejmontilvag@gmail.com" },
 ]

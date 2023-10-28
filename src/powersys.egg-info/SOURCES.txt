@@ -16,5 +16,10 @@ src/powersys.egg-info/SOURCES.txt
 src/powersys.egg-info/dependency_links.txt
 src/powersys.egg-info/requires.txt
 src/powersys.egg-info/top_level.txt
+tests/test_gap_power.py
+tests/test_kron.py
 tests/test_loadflow.py
 tests/test_opf.py
+tests/test_rm_vectors.py
+tests/test_terminal_values.py
+tests/test_yrm.py

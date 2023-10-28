@@ -67,6 +67,8 @@ class PowerSystemSolver(object):
         for gen in self.system.generators:
             gen.Pgen = self.Pgen[gen.id][0]
             gen.Qgen = self.Qgen[gen.id][0]
+
+        self.system.load_flow_solved = True
  
     def extract_results(self):
         if not self.opf_solved and not self.load_flow_solved:
@@ -212,11 +214,11 @@ class PowerSystemSolver(object):
                 m.Equation(self.Pgen[gen.id] == 0.0)
 
     def __construct_optim_model(self, study = 'opf'):
-        m = GEKKO(remote = False)
+        m = GEKKO()
 
         if study == 'opf':
             m.options.SOLVER = 1 # apopt for MINLP
-            m.options.DIAGLEVEL = 2 # for multipliers
+            # m.options.DIAGLEVEL = 2 # for multipliers
         # Voltage variables
         self.V = m.Array(m.Var, dim = (self.system.n_buses,), value = 1.0)
 
