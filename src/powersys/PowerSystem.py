@@ -300,6 +300,28 @@ class PowerSystem(object):
 
         return self.M_reduction
 
+    def park_matrix(self):
+        if self.M_reduction is None:
+            raise "You need to perform an M reduction first"
+        
+        T = np.zeros((2*self.n_gens, 2*self.n_gens))
+        for i, geni in enumerate(self.generators):
+            for j, genj in enumerate(self.generators):
+                if i == j:
+                    T[2*i, 2*i] = np.cos(self.df[geni.bus])
+                    T[2*i+1, 2*i+1] = np.cos(self.df[geni.bus])
+
+                    T[2*i, 2*i+1] = np.sin(self.df[geni.bus])
+                    T[2*i+1, 2*i] = -np.sin(self.df[geni.bus])
+
+        self.T = T
+
+        return self.T
+    
+
+
+
+
     @staticmethod
     def from_pandas(df):
         pass
