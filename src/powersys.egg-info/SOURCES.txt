@@ -21,7 +21,9 @@ tests/test_kron.py
 tests/test_loadflow.py
 tests/test_m_reduction.py
 tests/test_opf.py
-tests/test_park.py
+tests/test_park_matrix.py
+tests/test_park_transform.py
+tests/test_qd_values.py
 tests/test_rm_vectors.py
 tests/test_terminal_values.py
 tests/test_yrm.py

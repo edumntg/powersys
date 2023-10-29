@@ -282,7 +282,7 @@ class PowerSystem(object):
     def m_reduction(self):
         # Reduces the system by removing PQ buses
 
-        M = np.zeros((2*self.n_gens, 2*self.n_gens), dtype = 'complex_')
+        M = np.zeros((2*self.n_gens, 2*self.n_gens))
 
         for i, gen in enumerate(self.generators):
             for j, gen in enumerate(self.generators):
@@ -318,9 +318,69 @@ class PowerSystem(object):
 
         return self.T
     
+    def park_transform(self, M):
+        if M is None:
+            M = self.m_reduction()
 
+        T = self.park_matrix()
+        
+        A = np.linalg.inv(np.linalg.inv(T)@M)@T
 
+        return A
+    
+    def qd_values(self):
+        # This function calculates voltages and currents in QD domain
+        if self.Vrm is None:
+            raise "You need to perform an RM transform first"
 
+        T = self.park_matrix()
+
+        # Calculate Vqd and Iqd
+        Vqd = T@self.Vrm
+        Iqd = T@self.Irm
+
+        Vq = np.zeros((self.n_gens, 1))
+        Vd = np.zeros((self.n_gens, 1))
+        Iq = np.zeros((self.n_gens, 1))
+        Id = np.zeros((self.n_gens, 1))
+
+        for i, gen in enumerate(self.generators):
+            Vq[i] = Vqd[2*i]
+            Vd[i] = Vqd[2*i+1]
+            Iq[i] = Iqd[2*i]
+            Id[i] = Iqd[2*i+1]
+
+        self.Vq = Vq
+        self.Vd = Vd
+        self.Iq = Iq
+        self.Id = Id
+
+        return Vq, Vd, Iq, Id
+
+    def excitation_values(self):
+        # Calculates the internal generator excitation voltages in QD domain
+        Eq = np.zeros((self.n_gens, 1))
+        Ed = np.zeros((self.n_gens, 1))
+        Eexc = np.zeros((self.n_gens, 1), dtype = "complex_")
+        for i, gen in enumerate(self.generators):
+            Eq[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xd*self.Id[i]
+            Ed[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xq*self.Iq[i]
+        
+            Eexc[i] = np.abs(Eq[i] + 1j*Ed[i])
+
+        self.Eq = Eq
+        self.Ed = Ed
+        self.Eexc = Eexc
+
+        return Eq, Ed, Eexc
+
+    def transient_initial_condition(self):
+        # Construct the vectors with initial values for transient analysis
+        self.w0 = np.zeros((self.n_gens, 1))
+        self.d0 = self.df.copy()
+        self.Pe_gap0 = self.Pm.copy()
+        self.Vmed0 = np.sqrt(self.Vq**2.0 + self.Vd**2.0).copy()
+        self.Vexc0 = self.Eexc.copy()
 
     @staticmethod
     def from_pandas(df):
