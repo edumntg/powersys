@@ -1,19 +1,17 @@
-from .PowerSystem import PowerSystem
+from ..PowerSystem import PowerSystem
 from gekko import GEKKO
 import pandas as pd
 import numpy as np
 
-class PowerSystemSolver(object):
+class OPFSolver(object):
 
     def __init__(self, system: PowerSystem):
         self.system = system
         self.opf_solved = False
-        self.load_flow_solved = False
         self.opf_solution = None
         self.opf_solver = None
-        self.load_flow_solution = None
 
-    def opf(self, disp = True):
+    def solve(self, disp = True):
         if not self.system:
             raise "No PowerSystem object declared"
         
@@ -21,7 +19,7 @@ class PowerSystemSolver(object):
         self.system.construct_ybus()
 
         # Construct Pyomo model
-        model = self.__construct_optim_model('opf')
+        model = self.__construct_optim_model()
 
         # Now, solve
         model.solve(disp = disp)
@@ -39,40 +37,12 @@ class PowerSystemSolver(object):
             gen.Qgen = self.Qgen[gen.id][0]
 
         # Load lagrange and kuhn-tucker multipliers
-        multipliers = np.loadtxt(model.path + '/apm_lam.txt')
-        self.multipliers = multipliers
+        # multipliers = np.loadtxt(model.path + '/apm_lam.txt')
+        # self.multipliers = multipliers
 
-    def loadflow(self, disp = True):
-        if not self.system:
-            raise "No PowerSystem object declared"
-        
-        # Construct Ybus
-        if self.system.Ybus is None:
-            self.system.construct_ybus()
-
-        # Construct Pyomo model
-        model = self.__construct_optim_model('load flow')
-
-        # Now, solve
-        model.solve(disp = disp)
-        self.load_flow_solved = True
-        
-        # Assign results
-        for bus in self.system.buses:
-            bus.V = self.V[bus.id][0]
-            bus.theta = self.theta[bus.id][0]
-            bus.Pgen = np.sum([self.Pgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
-            bus.Qgen = np.sum([self.Qgen[gen.id][0] for gen in self.system.generators if gen.bus == bus.id])
-
-        for gen in self.system.generators:
-            gen.Pgen = self.Pgen[gen.id][0]
-            gen.Qgen = self.Qgen[gen.id][0]
-
-        self.system.load_flow_solved = True
- 
     def extract_results(self):
         if not self.opf_solved and not self.load_flow_solved:
-            raise "OPF/Load flow not solved yet"
+            raise "OPF not solved yet"
         
         # Create dataframes for results
         data = []
@@ -108,10 +78,10 @@ class PowerSystemSolver(object):
 
         return bus_df, gen_df, lines_df
     
-    def __opf_objective(self, study = 'opf'):
-            total_cost = np.sum([gen.cost(self.Pgen[gen.id]) for gen in self.system.generators])
+    def __opf_objective(self):
+        total_cost = np.sum([gen.cost(self.Pgen[gen.id]) for gen in self.system.generators])
 
-            return total_cost if study == 'opf' else 0.0
+        return total_cost
 
     def __construct_optim_constr(self, m):
         # Kirchoff law for active power
@@ -182,42 +152,10 @@ class PowerSystemSolver(object):
             self.__opf_constr_line_max_mva_tofrom(line) for line in self.system.lines
         ])
     
-    def __construct_load_flow_constraints(self, m):
-        m.Equations([
-            self.__loadflow_constr_reference_bus_voltage(bus) for bus in self.system.buses if bus.reference
-        ])
-
-        # Set lines always active
-        m.Equations([
-            self.l[line.id] == 1 for line in self.system.lines
-        ])
-
-        # Set generators always active
-        m.Equations([
-            self.lg[gen.id] == 1 for gen in self.system.generators
-        ])
-
-        # For all buses containing a generator, we assume that bus is PV
-        for bus in self.system.buses:
-            is_pv = False
-            for gen in self.system.generators:
-                if gen.bus == bus.id:
-                    is_pv = True
-                    break
-            
-            if is_pv and not bus.reference:
-                m.Equation(self.V[bus.id] == bus.V)
-
-        # Now, for generators, set P = 0 (so they only supply Q)
-        for gen in self.system.generators:
-            if not self.system.get_bus(gen.bus).reference:
-                m.Equation(self.Pgen[gen.id] == 0.0)
-
-    def __construct_optim_model(self, study = 'opf'):
+    def __construct_optim_model(self):
         m = GEKKO()
 
-        if study == 'opf':
-            m.options.SOLVER = 1 # apopt for MINLP
+        m.options.SOLVER = 1 # apopt for MINLP
             # m.options.DIAGLEVEL = 2 # for multipliers
         # Voltage variables
         self.V = m.Array(m.Var, dim = (self.system.n_buses,), value = 1.0)
@@ -247,17 +185,13 @@ class PowerSystemSolver(object):
         # On/Off for generators
         self.lg = m.Array(m.Var, dim = (self.system.n_gens,), lb = 0, ub = 1, value = 1, integer = True)
 
-        if study == 'opf':
-            # Create objective function
-            m.Obj(self.__opf_objective(study))
+        # Create objective function
+        m.Obj(self.__opf_objective())
 
         # Construct constraints which are common for both opf/loadflow
         self.__construct_optim_constr(m)
 
-        if study == 'opf':
-            self.__construct_opf_contraints(m)
-        elif study == 'load flow':
-            self.__construct_load_flow_constraints(m)
+        self.__construct_opf_contraints(m)
 
         self.m = m
 
@@ -357,9 +291,4 @@ class PowerSystemSolver(object):
     
     def __opf_constr_bus_voltage_max(self, bus):
         return self.V[bus.id] <= bus.Vmax
-    
-    def __loadflow_constr_reference_bus_voltage(self, bus):
-        return self.V[bus.id] == bus.V
-
-      
         

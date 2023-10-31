@@ -108,13 +108,10 @@ class PowerSystem(object):
 
             if object_class is Bus:
                 self.buses = collection
-                self.n_buses = len(self.buses)
             elif object_class is Line:
                 self.lines = collection
-                self.n_lines = len(self.lines)
             elif object_class is Generator:
                 self.generators = collection
-                self.n_gens = len(self.generators)
         except Exception as e:
             raise f"Cannot read CSV {filename}: {e}"
 

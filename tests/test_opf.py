@@ -1,4 +1,5 @@
-from powersys import *
+from src.powersys import *
+from src.powersys.solvers import OPFSolver
 import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -10,10 +11,10 @@ system.load_lines(CWD + '/sample_data/ieee30_lines.csv')
 system.load_gens(CWD + '/sample_data/ieee30_gens.csv')
 print(str(system))
 
-solver = PowerSystemSolver(system)
+solver = OPFSolver(system)
 
 # Solve
-solver.opf()
+solver.solve()
 bus, gens, lines = solver.extract_results()
 print("Optimization problem solved. Press enter to continue...")
 input()
