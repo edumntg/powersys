@@ -1,5 +1,6 @@
 from src.powersys import *
 from src.powersys.solvers import LFSolver
+from src.powersys.models import PowerSystem
 import pandas as pd
 import numpy as np
 import os

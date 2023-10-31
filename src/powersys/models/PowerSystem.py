@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from .ObjectCollection import ObjectCollection
-from .Bus import Bus
-from .Line import Line
-from .Generator import Generator
+from ..objects.ObjectCollection import ObjectCollection
+from ..objects.Bus import Bus
+from ..objects.Line import Line
+from ..objects.Generator import Generator
 
 class PowerSystem(object):
 

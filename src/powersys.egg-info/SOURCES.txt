@@ -3,11 +3,6 @@ README.md
 pyproject.toml
 requirements.txt
 setup.cfg
-src/powersys/Bus.py
-src/powersys/Generator.py
-src/powersys/Line.py
-src/powersys/ObjectCollection.py
-src/powersys/PowerSystem.py
 src/powersys/__init__.py
 src/powersys/main.py
 src/powersys.egg-info/PKG-INFO
@@ -15,6 +10,13 @@ src/powersys.egg-info/SOURCES.txt
 src/powersys.egg-info/dependency_links.txt
 src/powersys.egg-info/requires.txt
 src/powersys.egg-info/top_level.txt
+src/powersys/models/PowerSystem.py
+src/powersys/models/__init__.py
+src/powersys/objects/Bus.py
+src/powersys/objects/Generator.py
+src/powersys/objects/Line.py
+src/powersys/objects/ObjectCollection.py
+src/powersys/objects/__init__.py
 src/powersys/solvers/LFSolver.py
 src/powersys/solvers/OPFSolver.py
 src/powersys/solvers/TransientAnalysis.py

@@ -1,5 +1,6 @@
 from src.powersys import *
 from src.powersys.solvers import OPFSolver
+from src.powersys.models import PowerSystem
 import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))

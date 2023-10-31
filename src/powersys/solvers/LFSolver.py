@@ -1,4 +1,4 @@
-from ..PowerSystem import PowerSystem
+from ..models.PowerSystem import PowerSystem
 from gekko import GEKKO
 import pandas as pd
 import numpy as np
