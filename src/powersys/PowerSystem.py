@@ -35,10 +35,6 @@ class PowerSystem(object):
 
         self.Ybus = None
 
-        self.n_buses = len(self.buses)
-        self.n_lines = len(self.lines)
-        self.n_gens = len(self.generators)
-
         self.b = None
         self.g = None
         self.G = None
@@ -46,10 +42,6 @@ class PowerSystem(object):
 
         self.load_flow_solved = False
         self.Ybus_load = None
-    
-    @property
-    def N(self):
-        return len(self.buses)
 
     def construct_ybus(self) -> np.array:
         self.Ybus = np.zeros((self.N, self.N), dtype="complex_")
@@ -104,10 +96,6 @@ class PowerSystem(object):
                 return line
             
         return None
-
-    @staticmethod
-    def from_excel(filename):
-        pass
 
     def load_from_csv(self, filename, object_class, delimiter = ','):
         # Open csv file
@@ -207,15 +195,6 @@ class PowerSystem(object):
         self.Yrm = Yrm
         return self.Yrm
     
-    @property
-    def non_PQ_N(self):
-        N = 0
-        for bus in self.buses:
-            if self.get_gen_by_bus(bus.id) or bus.reference: # bus is not PQ
-                N += 1
-
-        return N
-    
     def rm(self):
         # Calculates the Vrm and Irm vectors
         if self.Yrm is None:
@@ -256,6 +235,9 @@ class PowerSystem(object):
 
             Ef[i] = Vt[i] + (gen.Ra + 1j*gen.Xq)*It[i]
             df[i] = np.angle(Ef[i])
+
+            gen.Vt = Vt[i]
+            gen.It = It[i]
 
             gen.Ef = Ef[i]
             gen.df = df[i]
@@ -350,6 +332,11 @@ class PowerSystem(object):
             Iq[i] = Iqd[2*i]
             Id[i] = Iqd[2*i+1]
 
+            gen.Vq = Vq[i]
+            gen.Vd = Vd[i]
+            gen.Iq = Iq[i]
+            gen.Id = Id[i]
+
         self.Vq = Vq
         self.Vd = Vd
         self.Iq = Iq
@@ -368,6 +355,10 @@ class PowerSystem(object):
         
             Eexc[i] = np.abs(Eq[i] + 1j*Ed[i])
 
+            gen.Eq = Eq[i]
+            gen.Ed = Ed[i]
+            gen.Eexc = Eexc[i]
+
         self.Eq = Eq
         self.Ed = Ed
         self.Eexc = Eexc
@@ -381,6 +372,44 @@ class PowerSystem(object):
         self.Pe_gap0 = self.Pm.copy()
         self.Vmed0 = np.sqrt(self.Vq**2.0 + self.Vd**2.0).copy()
         self.Vexc0 = self.Eexc.copy()
+        self.Vt0 = self.V.copy()
+        self.Vpc10 = np.zeros((self.n_gens, 1))
+        self.Vpc20 = np.zeros((self.n_gens, 1))
+
+        self.Vref = self.V.copy()
+
+    def transient_analysis(self):
+        pass
+
+
+    @property
+    def N(self):
+        return len(self.buses)
+
+    @property
+    def n_gens(self):
+        return len(self.generators)
+    
+    @property
+    def n_buses(self):
+        return len(self.buses)
+    
+    @property
+    def n_lines(self):
+        return len(self.lines)
+
+    @property
+    def non_PQ_N(self):
+        N = 0
+        for bus in self.buses:
+            if self.get_gen_by_bus(bus.id) or bus.reference: # bus is not PQ
+                N += 1
+
+        return N
+
+    @staticmethod
+    def from_excel(filename):
+        pass
 
     @staticmethod
     def from_pandas(df):
