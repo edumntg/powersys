@@ -8,6 +8,8 @@ from ..objects.Generator import Generator
 class PowerSystem(object):
 
     def __init__(self, data: dict = {}):
+        self.f = 60 # Hz
+        self.we = 2*np.pi*self.f
         self.buses_raw = ObjectCollection()
         self.lines_raw = ObjectCollection()
         self.generators_raw = ObjectCollection()
@@ -344,20 +346,45 @@ class PowerSystem(object):
     def excitation_values(self):
         # Calculates the internal generator excitation voltages in QD domain
         Eq = np.zeros((self.n_gens, 1))
+        Eqp = np.zeros((self.n_gens, 1))
+        Eqpp = np.zeros((self.n_gens, 1))
+
         Ed = np.zeros((self.n_gens, 1))
+        Edp = np.zeros((self.n_gens, 1))
+        Edpp = np.zeros((self.n_gens, 1))
+
         Eexc = np.zeros((self.n_gens, 1), dtype = "complex_")
         for i, gen in enumerate(self.generators):
             Eq[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xd*self.Id[i]
+            Eqp[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xdp*self.Id[i]
+            Eqpp[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xdpp*self.Id[i]
+
             Ed[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xq*self.Iq[i]
-        
+            Edp[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xqp*self.Iq[i]
+            Edpp[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xqpp*self.Iq[i]
+
             Eexc[i] = np.abs(Eq[i] + 1j*Ed[i])
 
             gen.Eq = Eq[i]
+            gen.Eqp = Eqp[i]
+            gen.Eqpp = Eqpp[i]
+
             gen.Ed = Ed[i]
+            gen.Edp = Edp[i]
+            gen.Edpp = Edpp[i]
+
             gen.Eexc = Eexc[i]
+            gen.Vvi = gen.Eexc / (gen.Kexc*gen.Ka)
+            gen.Va = gen.Eexc / gen.Kexc
 
         self.Eq = Eq
+        self.Eqp = Eqp
+        self.Eqpp = Eqpp
+
         self.Ed = Ed
+        self.Edp = Edp
+        self.Edpp = Edpp
+
         self.Eexc = Eexc
 
         return Eq, Ed, Eexc
