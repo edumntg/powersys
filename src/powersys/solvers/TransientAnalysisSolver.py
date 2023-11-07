@@ -136,7 +136,7 @@ class TransientAnalysisSolver(object):
             self.dXv[i] = (1.0/gen.Tv)*(gen.Kv*(self.Pc[i, iter] + gen.Xp) - self.Xv[i, iter])
             self.dPc[i] = -gen.Ki*self.w[i, iter]
 
-    def __normal_equations(self, iter = 0):
+    def __compute_non_dynamic_values(self, iter = 0):
         for i, gen in enumerate(self.system.generators):
             self.Eqp[i,iter] = self.Vq[i, iter] + gen.Ra*self.Iq[i, iter] - gen.Xdp*self.Id[i, iter]
             self.Edp[i,iter] = self.Vd[i, iter] + gen.Ra*self.Id[i, iter] + gen.Xqp*self.Iq[i, iter]
@@ -184,14 +184,14 @@ class TransientAnalysisSolver(object):
         for i in range(self.N-1):
 
             # Compute normal equations
-            self.__normal_equations(i)
+            self.__compute_non_dynamic_values(i)
 
             y_old = self.__state_equations(self.tspan[i], y_old, self.__dt, i)
-            y_new = RK4.step(self.__state_equations, self.tspan[i], y_old, self.__dt, i)
+            y_new = solver.step(self.__state_equations, self.tspan[i], y_old, self.__dt, i)
 
             # Assin new values
-            self.w[:,i+1] = y_new[0,:]
-            self.d[:,i+1] = y_new[1,:]
+            self.omega[:,i+1] = y_new[0,:]
+            self.delta[:,i+1] = y_new[1,:]
             self.Edp[:,i+1] = y_new[2,:]
             self.Eqp[:,i+1] = y_new[3, :]
             self.Edpp[:, i+1] = y_new[4, :]
