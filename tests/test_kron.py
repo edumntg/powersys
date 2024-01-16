@@ -1,4 +1,6 @@
 from src.powersys import *
+from src.powersys.models import PowerSystem
+from src.powersys.solvers import LFSolver
 import pandas as pd
 import numpy as np
 import os
@@ -14,8 +16,8 @@ system.load_gens(CWD + '/sample_data/ieee9_gens.csv')
 Ybus, _, _, _, _ = system.construct_ybus()
 
 # Solve load flow
-solver = PowerSystemSolver(system)
-solver.loadflow()
+solver = LFSolver(system)
+solver.solve()
 
 # Now, construct the Ybus-load
 system.construct_load_ybus()

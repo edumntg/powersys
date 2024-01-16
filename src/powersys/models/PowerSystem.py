@@ -4,36 +4,27 @@ from ..objects.ObjectCollection import ObjectCollection
 from ..objects.Bus import Bus
 from ..objects.Line import Line
 from ..objects.Generator import Generator
+from dataclasses import dataclass
+from simple_parsing.helpers import Serializable
+
+@dataclass
+class PowerSystemArgs(Serializable):
+    buses: ObjectCollection
+    lines: ObjectCollection
+    generators: ObjectCollection
+    f: int = 60 # Hz
+
 
 class PowerSystem(object):
 
-    def __init__(self, data: dict = {}):
-        self.f = 60 # Hz
-        self.we = 2*np.pi*self.f
-        self.buses_raw = ObjectCollection()
-        self.lines_raw = ObjectCollection()
-        self.generators_raw = ObjectCollection()
-        self.buses = ObjectCollection()
-        self.lines = ObjectCollection()
-        self.generators = ObjectCollection()
+    def __init__(self, args: PowerSystemArgs):
+        self.args = args
 
-        if data and type(data) is dict and len(data) > 0:
-            self.buses_raw = data['buses']
-            self.lines_raw = data['lines']
-            self.generators_raw = data['generators']
-
-            # Initialize buses, lines and generators
-            for id, data in self.buses_raw.items():
-                bus = Bus(data)
-                self.buses.append(bus)
-
-            for id, data in self.lines_raw.items():
-                line = Line([id] + data)
-                self.lines.append(line)
-
-            for id, data in self.generators_raw.items():
-                gen = Generator([id] + data)
-                self.generators.append(gen)
+        self.f = self.args.f # Hz
+        self.w = 2*np.pi*self.f
+        self.buses = args.buses
+        self.generators = args.generators
+        self.lines = args.lines
 
         self.Ybus = None
 
@@ -99,7 +90,8 @@ class PowerSystem(object):
             
         return None
 
-    def load_from_csv(self, filename, object_class, delimiter = ','):
+    @staticmethod
+    def load_from_csv(filename, object_class, delimiter = ','):
         # Open csv file
         try:
             data = pd.read_csv(filename, delimiter = delimiter).to_numpy().astype(float)
@@ -108,26 +100,24 @@ class PowerSystem(object):
             for row in data:
                 collection.add(object_class(row))
 
-            if object_class is Bus:
-                self.buses = collection
-            elif object_class is Line:
-                self.lines = collection
-            elif object_class is Generator:
-                self.generators = collection
+            return collection
         except Exception as e:
             raise f"Cannot read CSV {filename}: {e}"
 
-    def load_buses(self, filename):
+    @staticmethod
+    def load_buses(filename):
         if filename.endswith('.csv'): # csvfile
-            return self.load_from_csv(filename, Bus)
-        
-    def load_lines(self, filename):
-        if filename.endswith('.csv'):
-            return self.load_from_csv(filename, Line)
+            return PowerSystem.load_from_csv(filename, Bus)
     
-    def load_gens(self, filename):
+    @staticmethod
+    def load_lines(filename):
         if filename.endswith('.csv'):
-            return self.load_from_csv(filename, Generator)
+            return PowerSystem.load_from_csv(filename, Line)
+    
+    @staticmethod
+    def load_gens(filename):
+        if filename.endswith('.csv'):
+            return PowerSystem.load_from_csv(filename, Generator)
 
     def kron_reduction(self):
         # This function calculates the cron reduction of the system
@@ -377,6 +367,8 @@ class PowerSystem(object):
             gen.Vvi = gen.Eexc / (gen.Kexc*gen.Ka)
             gen.Va = gen.Eexc / gen.Kexc
 
+            #self.generators[i] = gen
+
         self.Eq = Eq
         self.Eqp = Eqp
         self.Eqpp = Eqpp
@@ -392,15 +384,54 @@ class PowerSystem(object):
     def transient_initial_condition(self):
         # Construct the vectors with initial values for transient analysis
         self.w0 = np.zeros((self.n_gens, 1))
-        self.d0 = self.df.copy()
-        self.Pe_gap0 = self.Pm.copy()
-        self.Vmed0 = np.sqrt(self.Vq**2.0 + self.Vd**2.0).copy()
-        self.Vexc0 = self.Eexc.copy()
-        self.Vt0 = self.V.copy()
+        self.d0 = np.array([gen.df for gen in self.generators])
+        self.Pe_gap0 = np.array([gen.Pm for gen in self.generators])
+        self.Vmed0 = np.array([np.sqrt(gen.Vq**2.0 + gen.Vd**2.0) for gen in self.generators])
+        self.Vexc0 = np.array([gen.Eexc for gen in self.generators])
+        self.Vt0 = np.array([bus.V for bus in self.buses])
         self.Vpc10 = np.zeros((self.n_gens, 1))
         self.Vpc20 = np.zeros((self.n_gens, 1))
 
-        self.Vref = self.V.copy()
+        self.Vref = self.Vt0.copy()
+
+    def prepare_transient_analysis(self):
+
+        assert self.load_flow_solved, "You need to perform a Load Flow analysis first"
+
+        """ Compute all system's required parameters for transient analysis """
+        # Load-ybus
+        self.construct_load_ybus()
+
+        # Kron values
+        self.kron_reduction()
+
+        # RM Ybus
+        self.YRM()
+
+        # RM values
+        self.rm()
+
+        # VI terminal values
+        self.vi_terminal_values()
+
+        # Gap power
+        self.gap_power()
+
+        # M reduction
+        self.m_reduction()
+
+        # Park matrix
+        self.park_matrix()
+
+        # Qd values
+        self.qd_values()
+
+        # Excitation values
+        self.excitation_values()
+
+        # Transient initial condition
+        self.transient_initial_condition()
+
 
     def transient_analysis(self):
         pass

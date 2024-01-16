@@ -1,9 +1,8 @@
-from src.powersys import *
-from src.powersys.solvers import LFSolver
+from src.powersys.solvers import TransientAnalysisSolver, LFSolver
 from src.powersys.models import PowerSystem, PowerSystemArgs
-import pandas as pd
-import numpy as np
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,23 +22,12 @@ Ybus, _, _, _, _ = system.construct_ybus()
 solver = LFSolver(system)
 solver.solve()
 
-# Now, construct the Ybus-load
-system.construct_load_ybus()
+# Create a new transient stability solver
+transient_solver = TransientAnalysisSolver(system, np.linspace(0, 2, 100))
 
-# Construct Kron
-Ykron = system.kron_reduction()
+# Solve
+transient_solver.solve()
 
-# Construct Yrm
-Yrm = system.YRM()
-
-# Construct RM vectors
-Vrm, Irm = system.rm()
-
-Vt, It, Ef, df = system.vi_terminal_values()
-
-Pmgap = system.gap_power()
-
-print(Pmgap)
-
-
-
+plt.figure()
+plt.plot(transient_solver.omega[2,:])
+plt.show()

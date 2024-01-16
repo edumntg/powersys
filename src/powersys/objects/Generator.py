@@ -67,7 +67,13 @@ class Generator(object):
         self.Id = 0
 
         self.Eq = 0
+        self.Eqp = 0
+        self.Eqpp = 0
+
         self.Ed = 0
+        self.Edp = 0
+        self.Edpp = 0
+        
         self.Eexc = 0
 
     def cost(self, P):
