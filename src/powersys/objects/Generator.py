@@ -1,3 +1,5 @@
+import numpy as np
+
 class Generator(object):
     def __init__(self, data):
         self.id = int(data[0])
@@ -75,6 +77,31 @@ class Generator(object):
         self.Edpp = 0
         
         self.Eexc = 0
+
+
+    def compute_terminal_values(self, Vt, It):
+        self.Vt = Vt
+        self.It = It
+
+        self.Ef = self.Vt + (self.Ra + 1j*self.Xq)*self.It
+        self.df = np.angle(self.Ef)
+
+    def compute_gap_power(self):
+        self.Pm = np.real(self.Vt*np.conj(self.It)) + self.Ra*np.abs(self.It)**2.0
+
+    def compute_excitation_values(self):
+        self.Eq = self.Vq + self.Ra*self.Iq - self.Xd*self.Id
+        self.Eqp = self.Vq + self.Ra*self.Iq - self.Xdp*self.Id
+        self.Eqpp = self.Vq + self.Ra*self.Iq - self.Xdpp*self.Id
+
+        self.Ed = self.Vd + self.Ra*self.Id + self.Xq*self.Iq
+        self.Edp = self.Vd + self.Ra*self.Id + self.Xqp*self.Iq
+        self.Edpp = self.Vd + self.Ra*self.Id + self.Xqpp*self.Iq
+
+        self.Eexc = np.abs(self.Eq + 1j*self.Ed)
+
+        self.Vvi = self.Eexc / (self.Kexc*self.Ka)
+        self.Va = self.Eexc / self.Kexc
 
     def cost(self, P):
         return self.a*P**2 + self.b*P + self.c

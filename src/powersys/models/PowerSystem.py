@@ -27,15 +27,17 @@ class PowerSystem(object):
         self.lines = args.lines
 
         self.Ybus = None
+        self.Ybus_load = None
 
         self.b = None
         self.g = None
         self.G = None
         self.B = None
 
-        self.load_flow_solved = False
-        self.Ybus_load = None
-
+        self.lf_solved = False
+        self.opf_solved = False
+        self.ta_solved = False
+    
     def construct_ybus(self) -> np.array:
         self.Ybus = np.zeros((self.N, self.N), dtype="complex_")
         self.b = np.zeros((self.N, self.N))
@@ -206,49 +208,23 @@ class PowerSystem(object):
         
         return Vrm, Irm
 
-    def vi_terminal_values(self):
+    def compute_terminal_values(self):
         # Calculate the voltages and currents at bus terminals
 
         if self.Vrm is None or self.Irm is None:
             raise "No RM values calculated"
         
-        Vt = np.zeros((self.n_gens, 1), dtype='complex_')
-        It = np.zeros((self.n_gens, 1), dtype='complex_')
-
-        # Vector to store internal generator voltages
-        Ef = np.zeros((self.n_gens, 1), dtype='complex_')
-        df = np.zeros((self.n_gens, 1))
         for i, gen in enumerate(self.generators):
-            Vt[i] = self.Vrm[2*i] +1j*self.Vrm[2*i+1]
-            It[i] = self.Irm[2*i] + 1j*self.Irm[2*i+1]
+            Vt = self.Vrm[2*i] +1j*self.Vrm[2*i+1]
+            It = self.Irm[2*i] + 1j*self.Irm[2*i+1]
 
-            Ef[i] = Vt[i] + (gen.Ra + 1j*gen.Xq)*It[i]
-            df[i] = np.angle(Ef[i])
+            gen.compute_terminal_values(Vt[0], It[0])
 
-            gen.Vt = Vt[i]
-            gen.It = It[i]
-
-            gen.Ef = Ef[i]
-            gen.df = df[i]
-
-        self.Vt = Vt
-        self.It = It
-        self.Ef = Ef
-        self.df = df
-
-        return self.Vt, self.It, self.Ef, self.df
-
-    def gap_power(self):
+    def compute_gap_power(self):
         # Calculates the mechanical power supplied to the generator (electrical + losses)
 
-        Pm = np.zeros((self.n_gens, 1))
         for i, gen in enumerate(self.generators):
-            Pm[i] = np.real(self.Vt[i]*np.conj(self.It[i])) + gen.Ra*np.abs(self.It[i])**2.0
-            gen.Pm = Pm[i]
-        
-        self.Pm = Pm
-
-        return self.Pm
+            gen.compute_gap_power()
 
     def m_reduction(self):
         # Reduces the system by removing PQ buses
@@ -279,11 +255,11 @@ class PowerSystem(object):
         for i, geni in enumerate(self.generators):
             for j, genj in enumerate(self.generators):
                 if i == j:
-                    T[2*i, 2*i] = np.cos(self.df[geni.bus])
-                    T[2*i+1, 2*i+1] = np.cos(self.df[geni.bus])
+                    T[2*i, 2*i] = np.cos(geni.df)
+                    T[2*i+1, 2*i+1] = np.cos(geni.df)
 
-                    T[2*i, 2*i+1] = np.sin(self.df[geni.bus])
-                    T[2*i+1, 2*i] = -np.sin(self.df[geni.bus])
+                    T[2*i, 2*i+1] = np.sin(geni.df)
+                    T[2*i+1, 2*i] = -np.sin(geni.df)
 
         self.T = T
 
@@ -299,7 +275,7 @@ class PowerSystem(object):
 
         return A
     
-    def qd_values(self):
+    def compute_qd_values(self):
         # This function calculates voltages and currents in QD domain
         if self.Vrm is None:
             raise "You need to perform an RM transform first"
@@ -310,76 +286,17 @@ class PowerSystem(object):
         Vqd = T@self.Vrm
         Iqd = T@self.Irm
 
-        Vq = np.zeros((self.n_gens, 1))
-        Vd = np.zeros((self.n_gens, 1))
-        Iq = np.zeros((self.n_gens, 1))
-        Id = np.zeros((self.n_gens, 1))
-
         for i, gen in enumerate(self.generators):
-            Vq[i] = Vqd[2*i]
-            Vd[i] = Vqd[2*i+1]
-            Iq[i] = Iqd[2*i]
-            Id[i] = Iqd[2*i+1]
+            gen.Vq = Vqd[2*i][0]
+            gen.Vd = Vqd[2*i+1][0]
+            gen.Iq = Iqd[2*i][0]
+            gen.Id = Iqd[2*i+1][0]
 
-            gen.Vq = Vq[i]
-            gen.Vd = Vd[i]
-            gen.Iq = Iq[i]
-            gen.Id = Id[i]
-
-        self.Vq = Vq
-        self.Vd = Vd
-        self.Iq = Iq
-        self.Id = Id
-
-        return Vq, Vd, Iq, Id
-
-    def excitation_values(self):
+    def compute_excitation_values(self):
         # Calculates the internal generator excitation voltages in QD domain
-        Eq = np.zeros((self.n_gens, 1))
-        Eqp = np.zeros((self.n_gens, 1))
-        Eqpp = np.zeros((self.n_gens, 1))
 
-        Ed = np.zeros((self.n_gens, 1))
-        Edp = np.zeros((self.n_gens, 1))
-        Edpp = np.zeros((self.n_gens, 1))
-
-        Eexc = np.zeros((self.n_gens, 1), dtype = "complex_")
         for i, gen in enumerate(self.generators):
-            Eq[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xd*self.Id[i]
-            Eqp[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xdp*self.Id[i]
-            Eqpp[i] = self.Vq[i] + gen.Ra*self.Iq[i] - gen.Xdpp*self.Id[i]
-
-            Ed[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xq*self.Iq[i]
-            Edp[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xqp*self.Iq[i]
-            Edpp[i] = self.Vd[i] + gen.Ra*self.Id[i] + gen.Xqpp*self.Iq[i]
-
-            Eexc[i] = np.abs(Eq[i] + 1j*Ed[i])
-
-            gen.Eq = Eq[i]
-            gen.Eqp = Eqp[i]
-            gen.Eqpp = Eqpp[i]
-
-            gen.Ed = Ed[i]
-            gen.Edp = Edp[i]
-            gen.Edpp = Edpp[i]
-
-            gen.Eexc = Eexc[i]
-            gen.Vvi = gen.Eexc / (gen.Kexc*gen.Ka)
-            gen.Va = gen.Eexc / gen.Kexc
-
-            #self.generators[i] = gen
-
-        self.Eq = Eq
-        self.Eqp = Eqp
-        self.Eqpp = Eqpp
-
-        self.Ed = Ed
-        self.Edp = Edp
-        self.Edpp = Edpp
-
-        self.Eexc = Eexc
-
-        return Eq, Ed, Eexc
+            gen.compute_excitation_values()
 
     def transient_initial_condition(self):
         # Construct the vectors with initial values for transient analysis
@@ -412,10 +329,10 @@ class PowerSystem(object):
         self.rm()
 
         # VI terminal values
-        self.vi_terminal_values()
+        self.compute_terminal_values()
 
         # Gap power
-        self.gap_power()
+        self.compute_gap_power()
 
         # M reduction
         self.m_reduction()
@@ -424,10 +341,10 @@ class PowerSystem(object):
         self.park_matrix()
 
         # Qd values
-        self.qd_values()
+        self.compute_qd_values()
 
         # Excitation values
-        self.excitation_values()
+        self.compute_excitation_values()
 
         # Transient initial condition
         self.transient_initial_condition()

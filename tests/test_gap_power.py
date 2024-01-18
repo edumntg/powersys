@@ -35,11 +35,11 @@ Yrm = system.YRM()
 # Construct RM vectors
 Vrm, Irm = system.rm()
 
-Vt, It, Ef, df = system.vi_terminal_values()
+system.compute_terminal_values()
 
-Pmgap = system.gap_power()
+system.compute_gap_power()
 
-print(Pmgap)
+print([gen.Pm for gen in system.generators])
 
 
 
