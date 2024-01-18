@@ -78,7 +78,6 @@ class Generator(object):
         
         self.Eexc = 0
 
-
     def compute_terminal_values(self, Vt, It):
         self.Vt = Vt
         self.It = It

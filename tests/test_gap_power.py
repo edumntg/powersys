@@ -7,39 +7,52 @@ import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
-args = PowerSystemArgs(
-    f = 60,
-    buses = PowerSystem.load_buses(CWD + '/sample_data/ieee9_buses.csv'),
-    lines = PowerSystem.load_lines(CWD + '/sample_data/ieee9_lines.csv'),
-    generators = PowerSystem.load_gens(CWD + '/sample_data/ieee9_gens.csv')
-)
+import unittest
 
-system = PowerSystem(args)
+class TestGapPowerCalculation(unittest.TestCase):
 
-# Construct Ybus
-Ybus, _, _, _, _ = system.construct_ybus()
+    @classmethod
+    def setUpClass(self):
+        #  Load system
+        args = PowerSystemArgs(
+            f = 60,
+            buses = PowerSystem.load_buses(CWD + '/sample_data/ieee9_buses.csv'),
+            lines = PowerSystem.load_lines(CWD + '/sample_data/ieee9_lines.csv'),
+            generators = PowerSystem.load_gens(CWD + '/sample_data/ieee9_gens.csv')
+        )
 
-# Solve load flow
-solver = LFSolver(system)
-solver.solve()
+        system = PowerSystem(args)
 
-# Now, construct the Ybus-load
-system.construct_load_ybus()
+        solver = LFSolver(system)
+        solver.solve(disp = False)
 
-# Construct Kron
-Ykron = system.kron_reduction()
+        # Now, construct the Ybus-load
+        system.construct_load_ybus()
 
-# Construct Yrm
-Yrm = system.YRM()
+        # Construct Kron
+        system.kron_reduction()
 
-# Construct RM vectors
-Vrm, Irm = system.rm()
+        # Construct Yrm
+        system.YRM()
 
-system.compute_terminal_values()
+        # Construct RM vectors
+        system.rm()
 
-system.compute_gap_power()
+        system.compute_terminal_values()
 
-print([gen.Pm for gen in system.generators])
+        system.compute_gap_power()
 
+        self.system = system
 
+    def test_correct_value(self):
+        expected = np.array([0.7170, 1.6325, 0.8521])
+        actual = np.array([gen.Pm for gen in self.system.generators])
+
+        self.assertTrue(np.abs(np.subtract(expected, actual)).max() <= 1E-3)
+
+    def test_correct_size(self):
+        self.assertTrue(np.array([gen.Pm for gen in self.system.generators]).size == self.system.n_gens)
+
+if __name__ == '__main__':
+    unittest.main()
 

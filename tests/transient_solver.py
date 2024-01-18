@@ -16,14 +16,15 @@ args = PowerSystemArgs(
 system = PowerSystem(args)
 
 # Construct Ybus
-Ybus, _, _, _, _ = system.construct_ybus()
+system.construct_ybus()
 
 # Solve load flow
 solver = LFSolver(system)
 solver.solve()
 
 # Create a new transient stability solver
-transient_solver = TransientAnalysisSolver(system, np.linspace(0, 2, 100))
+transient_solver = TransientAnalysisSolver(system)
+transient_solver.tspan = np.linspace(0, 50/system.f, 1000) # cycles
 
 # Solve
 transient_solver.solve()

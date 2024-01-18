@@ -122,7 +122,8 @@ class PowerSystem(object):
             return PowerSystem.load_from_csv(filename, Generator)
 
     def kron_reduction(self):
-        # This function calculates the cron reduction of the system
+        # This function calculates the kron reduction of the system
+        # The resulting system will be of size (n_gens, n_gens)
 
         # Ya is a matrix of size (n_gens, n_gens)
         Ya = self.Ybus_load[:self.n_gens, :self.n_gens]

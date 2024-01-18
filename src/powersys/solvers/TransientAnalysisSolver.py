@@ -5,11 +5,11 @@ from gekko import GEKKO
 
 class TransientAnalysisSolver(object):
 
-    def __init__(self, system: PowerSystem, tspan: np.array):
+    def __init__(self, system: PowerSystem, tspan: np.array = None):
         self.system = system
         self.solved = False
         self.tspan = tspan
-        self.__dt = tspan[1] - tspan[0]
+        #self.__dt = tspan[1] - tspan[0]
 
         #self.__initialize_values() # Initialize all vectors and pre-event values
 
@@ -176,6 +176,9 @@ class TransientAnalysisSolver(object):
 
     def solve(self, method = 'RK4'):
 
+        # Calculate time-step
+        self.__dt = self.tspan[1] - self.tspan[0]
+
         # Compute system's initial conditions
         self.system.prepare_transient_analysis()
 
@@ -193,7 +196,6 @@ class TransientAnalysisSolver(object):
 
             y_old = self.__state_equations(None, None, None, i)
             y_new = solver.step(self.__state_equations, self.tspan[i], y_old, self.__dt, i)
-            print(y_new.shape)
 
             # Assin new values
             self.omega[:,i+1] = y_new[0,:]
@@ -214,7 +216,6 @@ class TransientAnalysisSolver(object):
 
     def __solve_state_equations(self):
         pass
-
 
     @property
     def N(self):
