@@ -41,6 +41,10 @@ class Bus(object):
     @property
     def load(self):
         return self.Pload + 1j*self.Qload
+    
+    @staticmethod
+    def from_dict(dictio):
+        return Bus(list(dictio.values()))
 
     def __str__(self):
         return f"{self.id} - [{self.V:.2f}V, {self.theta:.2f}rads, P={self.Pgen:.2f}, Q={self.Qgen:.2f}, Vmin={self.Vmin:.2f}, Vmax={self.Vmax:.2f}]"

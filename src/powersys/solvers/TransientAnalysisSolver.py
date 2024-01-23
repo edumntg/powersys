@@ -9,6 +9,8 @@ class TransientAnalysisSolver(object):
         self.system = system
         self.solved = False
         self.tspan = tspan
+        self.event_system = None
+        self.post_event_system = None
         #self.__dt = tspan[1] - tspan[0]
 
         #self.__initialize_values() # Initialize all vectors and pre-event values

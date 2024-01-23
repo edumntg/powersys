@@ -6,6 +6,7 @@ from ..objects.Line import Line
 from ..objects.Generator import Generator
 from dataclasses import dataclass
 from simple_parsing.helpers import Serializable
+import json
 
 @dataclass
 class PowerSystemArgs(Serializable):
@@ -14,10 +15,10 @@ class PowerSystemArgs(Serializable):
     generators: ObjectCollection
     f: int = 60 # Hz
 
-
 class PowerSystem(object):
 
     def __init__(self, args: PowerSystemArgs):
+        
         self.args = args
 
         self.f = self.args.f # Hz
@@ -120,6 +121,30 @@ class PowerSystem(object):
     def load_gens(filename):
         if filename.endswith('.csv'):
             return PowerSystem.load_from_csv(filename, Generator)
+        
+    @staticmethod
+    def read_json(filename):
+        assert filename.endswith('.json'), "Invalid JSON file format."
+
+        with open(filename, 'r') as file:
+            data = json.load(file)
+
+            # Read required data
+            f = data['f']
+            buses = data['buses']
+            lines = data['lines']
+            generators = data['generators']
+
+            # Create arguments
+            args = PowerSystemArgs(
+                f = f,
+                buses = ObjectCollection().from_dict(buses, Bus),
+                lines = ObjectCollection().from_dict(lines, Line),
+                generators = ObjectCollection().from_dict(generators, Generator)
+            )
+
+            system = PowerSystem(args)
+            return system
 
     def kron_reduction(self):
         # This function calculates the kron reduction of the system
@@ -349,7 +374,6 @@ class PowerSystem(object):
 
         # Transient initial condition
         self.transient_initial_condition()
-
 
     def transient_analysis(self):
         pass

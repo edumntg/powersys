@@ -23,3 +23,7 @@ class Line(object):
     
     def __str__(self):
         return f"{self.id} - [{self.from_bus}, {self.to_bus}, {self.R}, {self.X}, {self.B}, {self.a}, {self.mva}]"
+
+    @staticmethod
+    def from_dict(dictio):
+        return Line(list(dictio.values()))

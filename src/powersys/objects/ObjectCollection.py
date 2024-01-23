@@ -1,4 +1,5 @@
 import pandas as pd
+from ..objects.Bus import Bus
 
 class ObjectCollection(object):
 
@@ -36,4 +37,21 @@ class ObjectCollection(object):
             return collection
         except Exception as e:
             raise f"Cannot read CSV {filename}: {e}"
-        
+    
+    def from_dict(self, dictio, object_class = None):
+        assert object_class is not None, "object_class property cannot be null"
+        assert isinstance(dictio, dict), "Data is not a valid dictionary"
+
+        self.items = []
+
+        for (key, value) in dictio.items():
+            object_id = int(key)
+            dict_data = dict(value)
+            dict_data['id'] = object_id
+
+            self.items.append(object_class.from_dict(dict_data))
+
+        return self
+
+
+
