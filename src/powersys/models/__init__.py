@@ -1,1 +1,1 @@
-from .PowerSystem import PowerSystem, PowerSystemArgs
+from .powersystem import PowerSystem, PowerSystemArgs

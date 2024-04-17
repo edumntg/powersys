@@ -1,5 +1,5 @@
-from ..models.PowerSystem import PowerSystem
-from ..math.explicit.RK4 import RK4
+from ..models.powersystem import PowerSystem
+from ..math.explicit.rk4 import RK4
 import numpy as np
 from gekko import GEKKO
 

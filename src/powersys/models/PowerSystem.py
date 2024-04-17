@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from ..objects.ObjectCollection import ObjectCollection
-from ..objects.Bus import Bus
-from ..objects.Line import Line
-from ..objects.Generator import Generator
+from ..objects.object_collection import ObjectCollection
+from ..objects.busbar import Bus
+from ..objects.transmission_line import Line
+from ..objects.synchronous_machine import Generator
 from dataclasses import dataclass
 from simple_parsing.helpers import Serializable
 import json

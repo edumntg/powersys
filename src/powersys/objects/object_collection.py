@@ -1,5 +1,5 @@
 import pandas as pd
-from ..objects.Bus import Bus
+from . import Bus
 
 class ObjectCollection(object):
 
