@@ -1,24 +1,22 @@
-from src.powersys import *
-from src.powersys.solvers import OPFSolver
-from src.powersys.models import PowerSystem, PowerSystemArgs
+import powersys as ps
 import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
-args = PowerSystemArgs(
+args = ps.model.PowerSystemArgs(
     f = 60,
-    buses = PowerSystem.load_buses(CWD + '/sample_data/ieee9_buses.csv'),
-    lines = PowerSystem.load_lines(CWD + '/sample_data/ieee9_lines.csv'),
-    generators = PowerSystem.load_gens(CWD + '/sample_data/ieee9_gens.csv')
+    buses = ps.model.PowerSystem.load_buses(CWD + '/sample_data/ieee9_buses.csv'),
+    lines = ps.model.PowerSystem.load_lines(CWD + '/sample_data/ieee9_lines.csv'),
+    generators = ps.model.PowerSystem.load_gens(CWD + '/sample_data/ieee9_gens.csv')
 )
 
-system = PowerSystem(args)
+system = ps.model.PowerSystem(args)
 
-solver = OPFSolver(system)
+solvers = ps.solver.OPF(system)
 
 # Solve
-solver.solve()
-bus, gens, lines = solver.extract_results()
+solvers.solve()
+bus, gens, lines = solvers.extract_results()
 print("Optimization problem solved. Press enter to continue...")
 input()
 print(bus)

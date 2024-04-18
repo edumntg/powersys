@@ -10,6 +10,7 @@ src/powersys.egg-info/SOURCES.txt
 src/powersys.egg-info/dependency_links.txt
 src/powersys.egg-info/requires.txt
 src/powersys.egg-info/top_level.txt
+src/powersys/data/loader.py
 src/powersys/math/explicit/RK4.py
 src/powersys/math/explicit/rk4.py
 src/powersys/models/PowerSystem.py
@@ -23,9 +24,11 @@ src/powersys/objects/transmission_line.py
 src/powersys/solvers/__init__.py
 src/powersys/solvers/lf.py
 src/powersys/solvers/opf.py
+src/powersys/solvers/solver.py
 src/powersys/solvers/transient.py
 tests/test_gap_power.py
 tests/test_kron.py
+tests/test_lf.py
 tests/test_loadflow.py
 tests/test_m_reduction.py
 tests/test_opf.py

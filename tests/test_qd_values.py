@@ -1,5 +1,5 @@
 from src.powersys import *
-from src.powersys.solvers import LFSolver
+from src.powersys.solvers import LF
 from src.powersys.models import PowerSystem, PowerSystemArgs
 import pandas as pd
 import numpy as np
@@ -20,8 +20,8 @@ system = PowerSystem(args)
 Ybus, _, _, _, _ = system.construct_ybus()
 
 # Solve load flow
-solver = LFSolver(system)
-solver.solve()
+solvers = LF(system)
+solvers.solve()
 
 # Now, construct the Ybus-load
 system.construct_load_ybus()

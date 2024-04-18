@@ -1,6 +1,4 @@
-from src.powersys import *
-from src.powersys.solvers import LFSolver
-from src.powersys.models import PowerSystem, PowerSystemArgs
+import powersys as ps
 import pandas as pd
 import numpy as np
 import os
@@ -12,7 +10,7 @@ import unittest
 class TestJSONLoader(unittest.TestCase):
 
     def test_read_json(self):
-        system = PowerSystem.read_json(CWD + '/sample_data/ieee9.json')
+        system = ps.models.PowerSystem.read_json(CWD + '/sample_data/ieee9.json')
 
         assert system.N == 9, "Incorrect number of bus bars"
         assert system.n_gens == 3, "Incorrect number of generators"

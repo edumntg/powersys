@@ -1,4 +1,4 @@
-from src.powersys.solvers import TransientAnalysisSolver, LFSolver
+from src.powersys.solvers import TransientAnalysisSolver, LF
 from src.powersys.models import PowerSystem, PowerSystemArgs
 import os
 import numpy as np
@@ -19,7 +19,7 @@ system = PowerSystem(args)
 system.construct_ybus()
 
 # Solve load flow
-solver = LFSolver(system)
+solver = LF(system)
 solver.solve()
 
 # Create a new transient stability solver
