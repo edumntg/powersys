@@ -14,6 +14,7 @@ src/powersys/data/loader.py
 src/powersys/math/explicit/RK4.py
 src/powersys/math/explicit/rk4.py
 src/powersys/math/iterative/__init__.py
+src/powersys/math/iterative/gauss_seidel.py
 src/powersys/math/iterative/iterative.py
 src/powersys/math/iterative/newton_raphson.py
 src/powersys/models/PowerSystem.py

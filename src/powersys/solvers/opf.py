@@ -1,6 +1,6 @@
 from ..models.powersystem import PowerSystem
 import numpy as np
-from ..solvers.solver import Solver 
+from .solver import *
 
 class OPF(Solver):
 

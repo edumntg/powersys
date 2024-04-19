@@ -1,5 +1,5 @@
 from ..models.powersystem import PowerSystem
-from ..solvers.solver import Solver
+from .solver import *
 
 class LF(Solver):
 
@@ -19,10 +19,10 @@ class LF(Solver):
         if method == "default":
             solver_model = self.construct_model_solver()
         elif method == "gauss-seidel" or method == "gs":
-            solver_model = self.__construct_gauss_seidel_model()
+            solver_model = self.construct_gauss_seidel_model()
             print(solver_model)
         elif method =="newton-raphson" or method == "nr":
-            #solver_model = self.__construct_newton_raphson_model()
+            #solver_model = self.construct_newton_raphson_model()
             pass
         else:
             raise "Invalid LF solver method specified. Got: " + method
