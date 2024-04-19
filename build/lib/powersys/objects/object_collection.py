@@ -1,5 +1,4 @@
 import pandas as pd
-from . import Bus
 
 class ObjectCollection(object):
 
@@ -52,6 +51,20 @@ class ObjectCollection(object):
             self.items.append(object_class.from_dict(dict_data))
 
         return self
+    
+    def some(self, condition):
+        for item in self.items:
+            if condition(item):
+                return True
+            
+        return False
+    
+    def find(self, object):
+        return self.items.find(object)
+    
+    def contains(self, object):
+        return self.find(object) != -1
+
 
 
 

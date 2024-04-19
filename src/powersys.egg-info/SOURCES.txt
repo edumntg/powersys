@@ -13,6 +13,9 @@ src/powersys.egg-info/top_level.txt
 src/powersys/data/loader.py
 src/powersys/math/explicit/RK4.py
 src/powersys/math/explicit/rk4.py
+src/powersys/math/iterative/__init__.py
+src/powersys/math/iterative/iterative.py
+src/powersys/math/iterative/newton_raphson.py
 src/powersys/models/PowerSystem.py
 src/powersys/models/__init__.py
 src/powersys/models/powersystem.py
@@ -27,6 +30,7 @@ src/powersys/solvers/opf.py
 src/powersys/solvers/solver.py
 src/powersys/solvers/transient.py
 tests/test_gap_power.py
+tests/test_gauss-seidel.py
 tests/test_kron.py
 tests/test_lf.py
 tests/test_loadflow.py

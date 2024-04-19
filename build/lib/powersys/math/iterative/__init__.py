@@ -1,0 +1,1 @@
+from .iterative.gauss_seidel import GaussSeidel

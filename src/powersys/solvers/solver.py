@@ -1,4 +1,5 @@
 from ..models.powersystem import PowerSystem
+from ..math.iterative import GaussSeidel
 import numpy as np
 import pandas as pd
 from gekko import GEKKO
@@ -195,3 +196,9 @@ class Solver:
         for gen in self.model.generators:
             gen.Pgen = self.Pgen[gen.id][0]
             gen.Qgen = self.Qgen[gen.id][0]
+
+    def construct_iterative_solver(self, method = "gauss-seidel"):
+        if method == "gauss-seidel":
+            solver = GaussSeidel()
+
+        return solver

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: powersys
-Version: 0.5.0
+Version: 0.5.3
 Summary: Python package for Power System Analysis, Optimization and Dynamics
 Author-email: Eduardo Montilva <edumntg@gmail.com>
 Project-URL: Homepage, https://github.com/edumntg/powersys
