@@ -19,8 +19,7 @@ class LF(Solver):
         if method == "default":
             solver_model = self.construct_model_solver()
         elif method == "gauss-seidel" or method == "gs":
-            solver_model = self.construct_gauss_seidel_model()
-            print(solver_model)
+            solver_model = self.construct_gauss_seidel_model(self.model)
         elif method =="newton-raphson" or method == "nr":
             #solver_model = self.construct_newton_raphson_model()
             pass
@@ -76,7 +75,7 @@ class LF(Solver):
     def __loadflow_constr_reference_bus_voltage(self, bus):
         return self.V[bus.id] == bus.V
 
-    def construct_gauss_seidel_model(self):
-        solver = super().construct_iterative_solver("gauss-seidel")
+    def construct_gauss_seidel_model(self, model: PowerSystem):
+        solver = super().construct_iterative_solver(model, "gauss-seidel")
 
         return solver
