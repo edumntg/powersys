@@ -92,12 +92,7 @@ class OPF(Solver):
     
     def __opf_constr_gen_Qmax(self, gen):
         return self.Qgen[gen.id] <= self.lg[gen.id]*gen.Qmax
-    
-        i = line.to_bus
-        k = line.from_bus
 
-        return self.Qflow[i,k] == self.l[line.id]*((self.model.B[i,k] - self.model.b[i,k])*self.V[i]**2 + self.V[i]*self.V[k]*(-self.model.B[i,k]*m.cos(self.theta[i] - self.theta[k]) + self.model.G[i,k]*m.sin(self.theta[i] - self.theta[k])))
-    
     def __opf_constr_line_max_mva_fromto(self, line):
         # Get apparent power
 

@@ -34,6 +34,7 @@ tests/test_gap_power.py
 tests/test_gauss-seidel.py
 tests/test_kron.py
 tests/test_lf.py
+tests/test_lf_scipy.py
 tests/test_loadflow.py
 tests/test_m_reduction.py
 tests/test_opf.py

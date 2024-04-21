@@ -4,7 +4,7 @@ class Bus(object):
 
     def __init__(self, data):
         self.id = int(data[0])
-        self.reference = int(data[1]) == 1
+        self.type = int(data[1])
         self.V = data[2]
         self.theta = data[3]
         self.Pgen = data[4]
@@ -17,7 +17,7 @@ class Bus(object):
         # Fixed generation
         self.Pgen_fixed = data[4]
         self.Qgen_fixed = data[5]
-
+    
     @property
     def P(self):
         return self.Pgen

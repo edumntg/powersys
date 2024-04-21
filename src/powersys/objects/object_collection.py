@@ -64,7 +64,14 @@ class ObjectCollection(object):
     
     def contains(self, object):
         return self.find(object) != -1
+    
+    def filter(self, condition):
+        ret = []
+        for item in self.items:
+            if condition(item):
+                ret.append(item)
 
+        return ret
 
 
 

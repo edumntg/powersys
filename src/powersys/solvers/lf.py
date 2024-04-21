@@ -25,6 +25,10 @@ class LF(Solver):
             pass
         else:
             raise "Invalid LF solver method specified. Got: " + method
+        
+        # SCIPY TEST
+        func, x0 = self.construct_scipy_fsolve(self.model)
+        print(self.solve_scipy_fsolve(func, x0, self.model))
 
         # Now, solve
         solver_model.solve(disp = disp)

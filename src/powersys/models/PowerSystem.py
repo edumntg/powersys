@@ -38,6 +38,8 @@ class PowerSystem(object):
         self.lf_solved = False
         self.opf_solved = False
         self.ta_solved = False
+
+        self.check()
     
     def construct_ybus(self) -> np.array:
         self.Ybus = np.zeros((self.N, self.N), dtype="complex_")
@@ -394,6 +396,16 @@ class PowerSystem(object):
     @property
     def n_lines(self):
         return len(self.lines)
+    
+    @property
+    def n_pq(self):
+        pq_buses = self.buses.filter(lambda x: x.type == 3)
+        return pq_buses.length
+    
+    @property
+    def n_pv(self):
+        pv_buses = self.buses.filter(lambda x: x.type == 2)
+        return pv_buses.length
 
     @property
     def non_PQ_N(self):
@@ -423,3 +435,11 @@ class PowerSystem(object):
     def __str__(self):
         return f"Buses:\n{str(self.buses)}\n\nLines:\n{str(self.lines)}\n\nGenerators:\n{str(self.generators)}"
     
+    def check(self):
+        for bus in self.buses:
+            gen = self.get_gen_by_bus(bus.id)
+            if gen and bus.type == 3:
+                print(f"Bus {bus.id} defined as PQ but has generator connected. Switched to PV")
+                bus.type = 2
+        
+        return True

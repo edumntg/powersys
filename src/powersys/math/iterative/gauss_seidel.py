@@ -21,7 +21,7 @@ class GaussSeidel(Iterative):
         Vprev = V.copy()
         while err > self.tol and iters < self.max_iters:
             for bus in self.model.buses:
-                if bus.reference: # slack
+                if bus.type == 1: # slack
                     continue
 
                 PYV = 0

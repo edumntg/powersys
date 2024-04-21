@@ -3,6 +3,8 @@ from ..math.iterative import *
 import numpy as np
 import pandas as pd
 from gekko import GEKKO
+import scipy 
+from scipy.optimize import minimize, fsolve
 
 class Solver:
     def __init__(self, model: PowerSystem):
@@ -198,7 +200,186 @@ class Solver:
             gen.Qgen = self.Qgen[gen.id][0]
 
     def construct_iterative_solver(self, model: PowerSystem, method = "gauss-seidel"):
+
         if method == "gauss-seidel":
             solver = GaussSeidel(model, IterativeArgs())
 
         return solver
+    
+    def construct_scipy_model(self, model: PowerSystem):
+        # Create initial guess
+        x0 = np.concatenate([
+            np.array([bus.V for bus in model.buses]),
+            np.array([bus.angle for bus in model.buses])
+        ])
+
+        print("Num of vars", x0.shape)
+
+        # Define constraints
+        cons = []
+        for bus in model.buses:
+            # if bus.reference:
+            #     cons.append({'type': 'eq', 'fun': self.scipy_reference_mag, 'args': (bus, model)})
+            #     cons.append({'type': 'eq', 'fun': self.scipy_reference_angle, 'args': (bus, model)})
+            # Kirchoff for P
+            cons.append({'type': 'eq', 'fun': self.scipy_kirchoff_P, 'args': (bus, model)})
+            # Kirchoff for Q
+            #cons.append({'type': 'eq', 'fun': self.scipy_kirchoff_Q, 'args': (bus, model)})
+
+        bounds = [(bus.Vmin, bus.Vmax) for bus in model.buses]
+        bounds += [(-np.pi, np.pi) for bus in model.buses]
+
+        # For reference bus, set voltage and angle bounds fixed
+        for bus in model.buses:
+            if bus.reference:
+                bounds[bus.id] = (bus.V, bus.V)
+                bounds[model.n_buses + bus.id] = (0.0, 0.0)
+                break
+
+        print("Equality constraints", len(cons))
+
+        return x0, tuple(cons), bounds
+
+    def construct_scipy_fsolve(self, model: PowerSystem):
+        def func(x, model):
+            V = np.array([bus.V for bus in model.buses])
+            theta = np.array([bus.angle for bus in model.buses])
+            Pgen = np.array([bus.Pgen for bus in model.buses])
+            Qgen = np.array([bus.Qgen for bus in model.buses])
+
+            v = 0
+            for bus in model.buses:
+                if bus.type == 1: # slack: vars are P and Q
+                    Pgen[bus.id] = x[v]
+                    Qgen[bus.id] = x[v+1]
+                elif bus.type == 2: # pv: vars are theta and Q
+                    theta[bus.id] = x[v]
+                    Qgen[bus.id] = x[v+1]
+                else: # pq: vars are V and theta
+                    V[bus.id] = x[v]
+                    theta[bus.id] = x[v+1]
+            
+                v += 2
+            
+            Pout = np.zeros(model.n_buses)
+            Qout = np.zeros(model.n_buses)
+
+            for line in model.lines:
+                i = line.from_bus
+                k = line.to_bus
+                Pout[i] += ((-model.G[i,k] + model.g[i,k])*V[i]**2 + V[i]*V[k]*(model.G[i,k]*np.cos(theta[i] - theta[k]) + model.B[i,k]*np.sin(theta[i] - theta[k])))
+                Pout[k] += ((-model.G[k,i] + model.g[k,i])*V[k]**2 + V[k]*V[i]*(model.G[k,i]*np.cos(theta[k] - theta[i]) + model.B[k,i]*np.sin(theta[k] - theta[i])))
+
+                Qout[i] += ((model.B[i,k] - model.b[i,k])*V[i]**2 + V[i]*V[k]*(-model.B[i,k]*np.cos(theta[i] - theta[k]) + model.G[i,k]*np.sin(theta[i] - theta[k])))
+                Qout[k] += ((model.B[k,i] - model.b[k,i])*V[k]**2 + V[k]*V[i]*(-model.B[k,i]*np.cos(theta[k] - theta[i]) + model.G[k,i]*np.sin(theta[k] - theta[i])))
+
+            # Finally, set equations
+            equations = []
+            for bus in model.buses:
+
+                equations.append(
+                    Pgen[bus.id] - bus.Pload - Pout[bus.id]
+                )
+                equations.append(
+                    Qgen[bus.id] - bus.Qload - Qout[bus.id]
+                )
+
+            return equations
+
+
+        # Create initial guess
+        nvars = 2*model.n_buses
+        x0 = np.random.randn(nvars)
+        return func, x0
+
+    def solve_scipy_fsolve(self, func, x0, model):
+        x = fsolve(func, x0, args = (model,))
+
+        # Re-arrange values into vectors
+        V = np.array([bus.V for bus in model.buses])
+        theta = np.array([bus.angle for bus in model.buses])
+        Pgen = np.array([bus.Pgen for bus in model.buses])
+        Qgen = np.array([bus.Qgen for bus in model.buses])
+
+        v = 0
+        for bus in model.buses:
+            if bus.type == 1: # slack: vars are P and Q
+                Pgen[bus.id] = x[v]
+                Qgen[bus.id] = x[v+1]
+            elif bus.type == 2: # pv: vars are theta and Q
+                theta[bus.id] = x[v]
+                Qgen[bus.id] = x[v+1]
+            else: # pq: vars are V and theta
+                V[bus.id] = x[v]
+                theta[bus.id] = x[v+1]
+        
+            v += 2
+
+        self.V = V
+        self.theta = theta
+
+        self.Pgen = np.zeros(model.n_gens)
+        self.Qgen = np.zeros(model.n_gens)
+        for gen in model.generators:
+            self.Pgen[gen.id] = Pgen[gen.bus]
+            self.Qgen[gen.id] = Qgen[gen.bus]
+
+        return np.concatenate([V, theta, Pgen, Qgen])
+
+    def scipy_obj(self, x, model):
+        return np.sum(x) # for LF, no objective function
+    
+    def scipy_kirchoff_P(self, x, bus, model):
+        V = x[:model.n_buses]
+        theta = x[model.n_buses:2*model.n_buses]
+
+        # Compute power generated at each bus
+        I = model.Ybus@V
+        S = V*np.conj(I)
+        P = np.real(S)
+
+        # Compute flows
+        Pflow = 0.0
+        for bus2 in model.buses:
+            if bus.id == bus2.id:
+                continue
+            
+            i = bus.id
+            k = bus2.id
+            Pflow += (-model.G[i, k] + model.g[i,k])*V[i]**2 + V[i]*V[k]*(model.G[i,k]*np.cos(theta[i] - theta[k]) + model.B[i,k]*np.sin(theta[i] - theta[k]))
+
+        return P[bus.id] - bus.Pload - Pflow
+    
+    def scipy_kirchoff_Q(self, x, bus, model):
+        V = x[:model.n_buses] # first n_buses elements
+        theta = x[model.n_buses:2*model.n_buses] # next n_buses elements
+
+        # Compute powe generated at each bus
+        I = model.Ybus@V
+        S = V*np.conj(I)
+        Q = np.imag(S)
+
+        # Compute flows
+        Qflow = 0.0
+        for bus2 in model.buses:
+            if bus.id == bus2.id:
+                continue
+            
+            i = bus.id
+            k = bus2.id
+            Qflow += (model.B[i, k] - model.b[i,k])*V[i]**2 + V[i]*V[k]*(-model.B[i,k]*np.cos(theta[i] - theta[k]) + model.G[i,k]*np.sin(theta[i] - theta[k]))
+
+        return Q[bus.id] - bus.Qload - Qflow
+    
+    def scipy_reference_mag(self, x, bus, model):
+        V = x[:model.n_buses]
+        return V[bus.id] - bus.V # V == setpoint
+    
+    def scipy_reference_angle(self, x, bus, model):
+        theta = x[model.n_buses:2*model.n_buses]
+        return theta[bus.id] - bus.angle # V == setpoint
+
+    def solve_scipy(self, x0, cons, bounds, model):
+        res = scipy.optimize.minimize(self.scipy_obj, x0, args = (model,), method = 'SLSQP', bounds = bounds, constraints = cons)
+
+        print(res)
