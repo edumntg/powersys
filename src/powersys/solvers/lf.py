@@ -19,24 +19,31 @@ class LF(Solver):
         if method == "default":
             solver_model = self.construct_model_solver()
         elif method == "gauss-seidel" or method == "gs":
-            solver_model = self.construct_gauss_seidel_model(self.model)
+            solver_model = self.construct_iterative_solver(self.model, "gauss-seidel")
         elif method =="newton-raphson" or method == "nr":
             #solver_model = self.construct_newton_raphson_model()
             pass
+        elif method == "scipy" or method == "fsolve":
+            solver_model = self.construct_iterative_solver(self.model, "scipy")
         else:
             raise "Invalid LF solver method specified. Got: " + method
-        
-        # SCIPY TEST
-        func, x0 = self.construct_scipy_fsolve(self.model)
-        print(self.solve_scipy_fsolve(func, x0, self.model))
 
         # Now, solve
-        solver_model.solve(disp = disp)
+        if method == "default":
+            solver_model.solve(disp = disp)
+
+            V = np.array([self.V[bus.id][0] for bus in self.model.buses])
+            theta = np.array([self.theta[bus.id][0] for bus in self.model.buses])
+            Pgen = np.array([self.Pgen[gen.id][0] for gen in self.model.generators])
+            Qgen = np.array([self.Qgen[gen.id][0] for gen in self.model.generators])
+        else:
+            V, theta, Pgen, Qgen = solver_model.solve(disp = disp)
+        
         self.solved = True
         self.model.lf_solved = True
-        
+
         # Assign results
-        self.assign_results()
+        self.assign_results(V, theta, Pgen, Qgen)
 
     def construct_model_solver(self):
         solver = super().construct_model_solver()
@@ -46,8 +53,11 @@ class LF(Solver):
         return solver
 
     def __construct_load_flow_constraints(self, m):
+
+        # Set voltage magnitude fixed for PV buses
+        # NOTE: For slack bus, the constraint for volt magnitude has already been set in the Solver instance. Same for angle
         m.Equations([
-            self.__loadflow_constr_reference_bus_voltage(bus) for bus in self.model.buses if bus.reference
+            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == 2
         ])
 
         # Set lines always active
@@ -61,25 +71,17 @@ class LF(Solver):
         ])
 
         # For all buses containing a generator, we assume that bus is PV
-        for bus in self.model.buses:
-            is_pv = False
-            for gen in self.model.generators:
-                if gen.bus == bus.id:
-                    is_pv = True
-                    break
+        # for bus in self.model.buses:
+        #     is_pv = False
+        #     for gen in self.model.generators:
+        #         if gen.bus == bus.id:
+        #             is_pv = True
+        #             break
             
-            if is_pv and not bus.reference:
-                m.Equation(self.V[bus.id] == bus.V)
+        #     if is_pv and not bus.type == 1:
+        #         m.Equation(self.V[bus.id] == bus.V)
 
-        # Now, for generators, set P = 0 (so they only supply Q)
+        # Now, for generators, set P = 0 (so they only supply Q). This is because PV buses have already a P declared that does not changes
         for gen in self.model.generators:
-            if not self.model.get_bus(gen.bus).reference:
+            if not self.model.get_bus(gen.bus).type == 1:
                 m.Equation(self.Pgen[gen.id] == 0.0)
-
-    def __loadflow_constr_reference_bus_voltage(self, bus):
-        return self.V[bus.id] == bus.V
-
-    def construct_gauss_seidel_model(self, model: PowerSystem):
-        solver = super().construct_iterative_solver(model, "gauss-seidel")
-
-        return solver

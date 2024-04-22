@@ -21,8 +21,13 @@ class OPF(Solver):
         solver_model.solve(disp = disp)
         self.solved = True
 
+        V = np.array([self.V[bus.id][0] for bus in self.model.buses])
+        theta = np.array([self.theta[bus.id][0] for bus in self.model.buses])
+        Pgen = np.array([self.Pgen[gen.id][0] for gen in self.model.generators])
+        Qgen = np.array([self.Qgen[gen.id][0] for gen in self.model.generators])
+
         # Assign results
-        self.assign_results()
+        self.assign_results(V, theta, Pgen, Qgen)
 
         # Load lagrange and kuhn-tucker multipliers
         # multipliers = np.loadtxt(model.path + '/apm_lam.txt')

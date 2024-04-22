@@ -48,4 +48,6 @@ class GaussSeidel(Iterative):
                 print(f"Max. number of iterations ({iters}) reached. Gauss-Seidel method did not converge.")
             
             Vprev = V.copy()
+
+        return np.abs(V), np.angle(V), P, Q
             
