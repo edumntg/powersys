@@ -17,25 +17,25 @@ class LF(Solver):
 
         # Construct Optim model
         if method == "default":
-            solver_model = self.construct_model_solver()
+            self.construct_model_solver()
         elif method == "gauss-seidel" or method == "gs":
-            solver_model = self.construct_iterative_solver(self.model, "gauss-seidel")
+            self.construct_iterative_solver(self.model, "gauss-seidel")
         elif method =="newton-raphson" or method == "nr":
             #solver_model = self.construct_newton_raphson_model()
             pass
         elif method == "scipy" or method == "fsolve":
-            solver_model = self.construct_iterative_solver(self.model, "scipy")
+            self.construct_iterative_solver(self.model, "scipy")
         else:
             raise "Invalid LF solver method specified. Got: " + method
 
         # Now, solve
+        solver_model, variables = self.state_dict()['solver'], self.state_dict()['variables']
+        solver_model.solve(disp = disp)
         if method == "default":
-            solver_model.solve(disp = disp)
-
-            V = np.array([self.V[bus.id][0] for bus in self.model.buses])
-            theta = np.array([self.theta[bus.id][0] for bus in self.model.buses])
-            Pgen = np.array([self.Pgen[gen.id][0] for gen in self.model.generators])
-            Qgen = np.array([self.Qgen[gen.id][0] for gen in self.model.generators])
+            V = np.array([variables['V'][bus.id][0] for bus in self.model.buses])
+            theta = np.array([variables['theta'][bus.id][0] for bus in self.model.buses])
+            Pgen = np.array([variables['Pgen'][gen.id][0] for gen in self.model.generators])
+            Qgen = np.array([variables['Qgen'][gen.id][0] for gen in self.model.generators])
         else:
             V, theta, Pgen, Qgen = solver_model.solve(disp = disp)
         
@@ -46,14 +46,13 @@ class LF(Solver):
         self.assign_results(V, theta, Pgen, Qgen)
 
     def construct_model_solver(self):
-        solver = super().construct_model_solver()
+        super().construct_model_solver()
 
-        self.__construct_load_flow_constraints(solver)
-        
-        return solver
+        self.__construct_load_flow_constraints()
 
-    def __construct_load_flow_constraints(self, m):
+    def __construct_load_flow_constraints(self):
 
+        m, variables = self.state_dict()['solver'], self.state_dict()['variables']
         # Set voltage magnitude fixed for PV buses
         # NOTE: For slack bus, the constraint for volt magnitude has already been set in the Solver instance. Same for angle
         m.Equations([
@@ -62,12 +61,12 @@ class LF(Solver):
 
         # Set lines always active
         m.Equations([
-            self.l[line.id] == 1 for line in self.model.lines
+            variables['l'][line.id] == 1 for line in self.model.lines
         ])
 
         # Set generators always active
         m.Equations([
-            self.lg[gen.id] == 1 for gen in self.model.generators
+            variables['lg'][gen.id] == 1 for gen in self.model.generators
         ])
 
         # For all buses containing a generator, we assume that bus is PV
@@ -84,4 +83,4 @@ class LF(Solver):
         # Now, for generators, set P = 0 (so they only supply Q). This is because PV buses have already a P declared that does not changes
         for gen in self.model.generators:
             if not self.model.get_bus(gen.bus).type == 1:
-                m.Equation(self.Pgen[gen.id] == 0.0)
+                m.Equation(variables['Pgen'][gen.id] == 0.0)
