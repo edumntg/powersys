@@ -15,16 +15,22 @@ class OPF(Solver):
         self.model.construct_ybus()
 
         # Construct Pyomo model
-        solver_model = self.construct_model_solver()
+        self.construct_model_solver()
 
         # Now, solve
-        solver_model.solve(disp = disp)
+        self.state_dict()['solver'].solve(disp = disp)
         self.solved = True
 
-        V = np.array([self.V[bus.id][0] for bus in self.model.buses])
-        theta = np.array([self.theta[bus.id][0] for bus in self.model.buses])
-        Pgen = np.array([self.Pgen[gen.id][0] for gen in self.model.generators])
-        Qgen = np.array([self.Qgen[gen.id][0] for gen in self.model.generators])
+        # Get variables
+        _V = self.state_dict()['variables']['V']
+        _theta = self.state_dict()['variables']['theta']
+        _Pgen = self.state_dict()['variables']['Pgen']
+        _Qgen = self.state_dict()['variables']['Qgen']        
+
+        V = np.array([_V[bus.id][0] for bus in self.model.buses])
+        theta = np.array([_theta[bus.id][0] for bus in self.model.buses])
+        Pgen = np.array([_Pgen[gen.id][0] for gen in self.model.generators])
+        Qgen = np.array([_Qgen[gen.id][0] for gen in self.model.generators])
 
         # Assign results
         self.assign_results(V, theta, Pgen, Qgen)
@@ -35,21 +41,21 @@ class OPF(Solver):
 
     def construct_model_solver(self):
 
-        solver = super().construct_model_solver()
+        super().construct_model_solver()
 
         # Create objective function
-        solver.Obj(self.__opf_objective())
+        self.state_dict()['solver'].Obj(self.__opf_objective())
 
-        self.__construct_opf_contraints(solver)
-
-        return solver
+        self.__construct_opf_contraints()
     
     def __opf_objective(self):
-        total_cost = np.sum([gen.cost(self.Pgen[gen.id]) for gen in self.model.generators])
+        state_dict = self.state_dict()
+        total_cost = np.sum([gen.cost(state_dict['variables']['Pgen'][gen.id]) for gen in self.model.generators])
 
         return total_cost
 
-    def __construct_opf_contraints(self, m):
+    def __construct_opf_contraints(self):
+        m = self.state_dict()['solver']
         # Bus voltage limits
         m.Equations([
             self.__opf_constr_bus_voltage_min(bus) for bus in self.model.buses
@@ -87,32 +93,32 @@ class OPF(Solver):
         ])
     
     def __opf_constr_gen_Pmin(self, gen):
-        return self.Pgen[gen.id] >= self.lg[gen.id]*gen.Pmin
+        return self.state_dict()['variables']['Pgen'][gen.id] >= self.state_dict()['variables']['lg'][gen.id]*gen.Pmin
     
     def __opf_constr_gen_Pmax(self, gen):
-        return self.Pgen[gen.id] <= self.lg[gen.id]*gen.Pmax
+        return self.state_dict()['variables']['Pgen'][gen.id] <= self.state_dict()['variables']['lg'][gen.id]*gen.Pmax
     
     def __opf_constr_gen_Qmin(self, gen):
-        return self.Qgen[gen.id] >= self.lg[gen.id]*gen.Qmin
+        return self.state_dict()['variables']['Qgen'][gen.id] >= self.state_dict()['variables']['lg'][gen.id]*gen.Qmin
     
     def __opf_constr_gen_Qmax(self, gen):
-        return self.Qgen[gen.id] <= self.lg[gen.id]*gen.Qmax
+        return self.state_dict()['variables']['Qgen'][gen.id] <= self.state_dict()['variables']['lg'][gen.id]*gen.Qmax
 
     def __opf_constr_line_max_mva_fromto(self, line):
         # Get apparent power
 
         #return self.Pflow[line.from_bus, line.to_bus]**2 + self.Qflow[line.from_bus, line.to_bus]**2 <= line.mva**2
-        return self.Pflow[line.from_bus, line.to_bus]**2 <= line.mva**2
+        return self.state_dict()['variables']['Pflow'][line.from_bus, line.to_bus]**2 <= line.mva**2
     
     def __opf_constr_line_max_mva_tofrom(self, line):
         # Get apparent power
 
         #return self.Pflow[line.to_bus, line.from_bus]**2 + self.Qflow[line.to_bus, line.from_bus]**2 <= line.mva**2
-        return self.Pflow[line.to_bus, line.from_bus]**2 <= line.mva**2
+        return self.state_dict()['variables']['Pflow'][line.to_bus, line.from_bus]**2 <= line.mva**2
 
     def __opf_constr_bus_voltage_min(self, bus):
-        return self.V[bus.id] >= bus.Vmin
+        return self.state_dict()['variables']['V'][bus.id] >= bus.Vmin
     
     def __opf_constr_bus_voltage_max(self, bus):
-        return self.V[bus.id] <= bus.Vmax
+        return self.state_dict()['variables']['V'][bus.id] <= bus.Vmax
         
