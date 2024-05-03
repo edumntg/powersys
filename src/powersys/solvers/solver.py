@@ -14,6 +14,9 @@ class Solver:
 
     def state_dict(self):
         return self.__state_dict
+    
+    def set_variables(self, vars):
+        self.__state_dict['variables'] = vars
 
     def solve(self, display = True):
         pass
@@ -29,8 +32,10 @@ class Solver:
         for bus in self.model.buses:
             # Append results as: V, theta, Pload, Qload, Pgen, Qgen
             row = [bus.id, bus.V, bus.theta, bus.Pload, bus.Qload]
-            Pgen = variables['Pgen_fixed'][bus.id][0] + np.sum([variables['Pgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
-            Qgen = variables['Qgen_fixed'][bus.id][0] + np.sum([variables['Qgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
+            #Pgen = variables['Pgen_fixed'][bus.id][0] + np.sum([variables['Pgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
+            #Qgen = variables['Qgen_fixed'][bus.id][0] + np.sum([variables['Qgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
+            Pgen = np.sum([gen.Pgen for gen in self.model.generators if gen.bus == bus.id])
+            Qgen = np.sum([gen.Qgen for gen in self.model.generators if gen.bus == bus.id])
             row += [Pgen, Qgen, bus.Vmin, bus.Vmax]
 
             data.append(row)
@@ -41,7 +46,7 @@ class Solver:
         # Create generators DataFrame
         data = []
         for gen in self.model.generators:
-            row = [gen.id, variables['lg'][gen.id][0], variables['Pgen'][gen.id][0], variables['Qgen'][gen.id][0], gen.cost(variables['Pgen'][gen.id][0]), gen.Pmin, gen.Pmax, gen.Qmin, gen.Qmax]
+            row = [gen.id, variables['lg'][gen.id][0], gen.Pgen, gen.Qgen, gen.cost(gen.Pgen), gen.Pmin, gen.Pmax, gen.Qmin, gen.Qmax]
             data.append(row)
         
         gen_df = pd.DataFrame(data, columns = ['id', 'active', 'Pgen', 'Qgen', 'cost', 'Pmin', 'Pmax', 'Qmin', 'Qmax'])
@@ -51,7 +56,7 @@ class Solver:
         for line in self.model.lines:
             i = line.from_bus
             k = line.to_bus
-            row = [line.id, i, k, variables['l'][line.id].value[0], variables['Pflow'][i,k][0], variables['Pflow'][k,i][0], variables['Qflow'][i,k][0], variables['Qflow'][k,i][0], line.S(variables['Pflow'][i,k][0], variables['Qflow'][i,k][0]), line.Plosses(variables['Pflow'][i,k][0], variables['Pflow'][k,i][0]), line.mva]
+            row = [line.id, i, k, variables['l'][line.id][0], variables['Pflow'][i,k][0], variables['Pflow'][k,i][0], variables['Qflow'][i,k][0], variables['Qflow'][k,i][0], line.S(variables['Pflow'][i,k][0], variables['Qflow'][i,k][0]), line.Plosses(variables['Pflow'][i,k][0], variables['Pflow'][k,i][0]), line.mva]
             data.append(row)
         
         lines_df = pd.DataFrame(data, columns = ['id', 'from', 'to', 'active', 'Pout', 'Pin', 'Qout', 'Qin', 'S', 'Ploss', 'mva'])
@@ -93,8 +98,8 @@ class Solver:
             'solver': solver,
             'variables': {
                 'Pgen': Pgen,
-                'Pgen_fixed': Pgen_fixed,
                 'Qgen': Qgen,
+                'Pgen_fixed': Pgen_fixed,
                 'Qgen_fixed': Qgen_fixed,
                 'V': V,
                 'theta': theta,
@@ -152,6 +157,7 @@ class Solver:
         variables = self.state_dict()['variables']
         Pflow = 0.0
         Pgen = variables['Pgen_fixed'][bus.id]
+        #Pgen = 0.0
 
         # Find if there is a generator connected at this bus
         for gen in self.model.generators:
@@ -172,6 +178,7 @@ class Solver:
         variables = self.state_dict()['variables']
         Qflow = 0.0
         Qgen = variables['Qgen_fixed'][bus.id]
+        #Qgen = 0.0
 
         # Find if there is a generator connected at this bus
         for gen in self.model.generators:
@@ -247,5 +254,35 @@ class Solver:
             solver = GaussSeidel(model, IterativeArgs())
         elif method == "scipy" or method == "fsolve":
             solver = ScipyFsolve(model, IterativeArgs())
+
+        self.__state_dict = {
+            'solver': solver,
+            'variables': {
+                'V': np.array([bus.V for bus in model.buses]),
+                'theta': np.array([bus.angle for bus in model.buses]),
+                'Pgen': np.array([gen.Pgen for gen in model.generators]),
+                'Qgen': np.array([gen.Qgen for gen in model.generators])
+            }
+        }
+
+        V = self.__state_dict['variables']['V']
+        theta = self.__state_dict['variables']['theta']
+
+        Pflow = np.zeros((model.n_buses, model.n_buses))
+        Qflow = np.zeros_like(Pflow)
+
+        for line in model.lines:
+            i = line.from_bus
+            k = line.to_bus
+            Pflow[i,k] = line.Pflow(np.array([V[i], V[k]]), np.array([theta[i], theta[k]]))
+            Qflow[i,k] = line.Qflow(np.array([V[i], V[k]]), np.array([theta[i], theta[k]]))
+
+            i = line.to_bus
+            k = line.from_bus
+            Pflow[i,k] = line.Pflow(np.array([V[i], V[k]]), np.array([theta[i], theta[k]]))
+            Qflow[i,k] = line.Qflow(np.array([V[i], V[k]]), np.array([theta[i], theta[k]]))
+
+        self.__state_dict['variables']['Pflow'] = Pflow
+        self.__state_dict['variables']['Qflow'] = Qflow
 
         return solver

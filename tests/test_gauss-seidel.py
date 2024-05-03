@@ -16,6 +16,7 @@ solver = ps.solvers.LF(system)
 
 # Solve
 solver.solve(disp = True, method = "gauss-seidel")
+
 buses, gens, lines = solver.extract_results()
 print("Optimization problem solved. Press enter to continue...")
 input()

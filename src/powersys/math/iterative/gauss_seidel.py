@@ -7,9 +7,14 @@ class GaussSeidel(Iterative):
     def __init__(self, model: PowerSystem, args: IterativeArgs):
         super().__init__(model, args)
 
-    def solve(self, disp = False):
+    def solve(self, state_dict, disp = False):
+        variables = state_dict['variables']
+        Vmag = variables['V']
+        theta = variables['theta']
+        Pgen = variables['Pgen']
+        Qgen = variables['Qgen']
         V = np.array([
-            np.abs(bus.V)*(np.cos(bus.theta) + 1j*np.sin(bus.theta))
+            np.abs(Vmag[bus.id])*(np.cos(theta[bus.id]) + 1j*np.sin(theta[bus.id]))
             for bus in self.model.buses
         ], dtype="complex")
 

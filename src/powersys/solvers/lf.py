@@ -30,15 +30,39 @@ class LF(Solver):
 
         # Now, solve
         solver_model, variables = self.state_dict()['solver'], self.state_dict()['variables']
-        solver_model.solve(disp = disp)
         if method == "default":
+            solver_model.solve(disp = disp)
             V = np.array([variables['V'][bus.id][0] for bus in self.model.buses])
             theta = np.array([variables['theta'][bus.id][0] for bus in self.model.buses])
             Pgen = np.array([variables['Pgen'][gen.id][0] for gen in self.model.generators])
             Qgen = np.array([variables['Qgen'][gen.id][0] for gen in self.model.generators])
         else:
-            V, theta, Pgen, Qgen = solver_model.solve(disp = disp)
-        
+            V, theta, Pgen, Qgen = solver_model.solve(self.state_dict(), disp = disp)
+            variables = {
+                'V': V,
+                'theta': theta,
+                'Pgen': Pgen,
+                'Qgen': Qgen,
+                'lg': np.array([[1] for gen in self.model.generators]),
+                'l': np.array([[1] for line in self.model.lines])
+            }
+
+            # Compute flows
+            Pflow = np.zeros((self.model.N, self.model.N, 1))
+            Qflow = np.zeros((self.model.N, self.model.N, 1))
+            for line in self.model.lines:
+                i = line.from_bus
+                k = line.to_bus
+                Pflow[i,k,0] = ((-self.model.G[i,k] + self.model.g[i,k])*V[i]**2 + V[i]*V[k]*(self.model.G[i,k]*np.cos(theta[i] - theta[k]) + self.model.B[i,k]*np.sin(theta[i] - theta[k])))
+                Pflow[k,i,0] = ((-self.model.G[k,i] + self.model.g[k,i])*V[k]**2 + V[k]*V[i]*(self.model.G[k,i]*np.cos(theta[k] - theta[i]) + self.model.B[k,i]*np.sin(theta[k] - theta[i])))
+
+                Qflow[i,k,0] = ((self.model.B[i,k] - self.model.b[i,k])*V[i]**2 + V[i]*V[k]*(-self.model.B[i,k]*np.cos(theta[i] - theta[k]) + self.model.G[i,k]*np.sin(theta[i] - theta[k])))
+                Qflow[k,i,0] = ((self.model.B[k,i] - self.model.b[k,i])*V[k]**2 + V[k]*V[i]*(-self.model.B[k,i]*np.cos(theta[k] - theta[i]) + self.model.G[k,i]*np.sin(theta[k] - theta[i])))
+            
+            variables['Pflow'] = Pflow
+            variables['Qflow'] = Qflow
+            self.set_variables(variables)
+
         self.solved = True
         self.model.lf_solved = True
 

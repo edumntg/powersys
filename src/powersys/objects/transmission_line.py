@@ -21,9 +21,23 @@ class Line(object):
     def Plosses(self, Pout, Pin):
         return Pout + Pin
     
+    def Pflow(self, V, theta):
+        Y = 1/self.Z
+        G = np.real(Y)
+        B = np.imag(Y)
+
+        return (-G)*V[0]**2 + V[0]*V[1]*(G*np.cos(theta[0] - theta[1]) + B*np.sin(theta[0] - theta[1]))
+    
+    def Qflow(self, V, theta):
+        Y = 1/self.Z
+        G = np.real(Y)
+        B = np.imag(Y)
+
+        return (B)*V[0]**2 + V[0]*V[1]*(-B*np.cos(theta[0] - theta[1]) + G*np.sin(theta[0] - theta[1]))
+    
     def __str__(self):
         return f"{self.id} - [{self.from_bus}, {self.to_bus}, {self.R}, {self.X}, {self.B}, {self.a}, {self.mva}]"
-
+    
     @staticmethod
     def from_dict(dictio):
         return Line(list(dictio.values()))
