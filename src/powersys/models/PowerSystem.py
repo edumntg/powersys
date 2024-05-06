@@ -400,12 +400,12 @@ class PowerSystem(object):
     @property
     def n_pq(self):
         pq_buses = self.buses.filter(lambda x: x.type == 3)
-        return pq_buses.length
+        return len(pq_buses)
     
     @property
     def n_pv(self):
         pv_buses = self.buses.filter(lambda x: x.type == 2)
-        return pv_buses.length
+        return len(pv_buses)
 
     @property
     def non_PQ_N(self):
