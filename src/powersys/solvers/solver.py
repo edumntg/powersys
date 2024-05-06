@@ -34,8 +34,8 @@ class Solver:
             row = [bus.id, bus.V, bus.theta, bus.Pload, bus.Qload]
             #Pgen = variables['Pgen_fixed'][bus.id][0] + np.sum([variables['Pgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
             #Qgen = variables['Qgen_fixed'][bus.id][0] + np.sum([variables['Qgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
-            Pgen = np.sum([gen.Pgen for gen in self.model.generators if gen.bus == bus.id])
-            Qgen = np.sum([gen.Qgen for gen in self.model.generators if gen.bus == bus.id])
+            Pgen = np.sum([gen.Pgen+bus.Pgen_fixed for gen in self.model.generators if gen.bus == bus.id])
+            Qgen = np.sum([gen.Qgen+bus.Qgen_fixed for gen in self.model.generators if gen.bus == bus.id])
             row += [Pgen, Qgen, bus.Vmin, bus.Vmax]
 
             data.append(row)
@@ -152,6 +152,11 @@ class Solver:
         m.Equations([
             self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == 1
         ])
+
+        if self.model.generators.some(lambda gen: gen.active == 0):
+            m.Equations([
+                self.disable_generator(gen) for gen in self.model.generators if gen.active == 0
+            ])
     
     def optim_constr_kirchoff_P(self, bus):
         variables = self.state_dict()['variables']
@@ -261,7 +266,9 @@ class Solver:
                 'V': np.array([bus.V for bus in model.buses]),
                 'theta': np.array([bus.angle for bus in model.buses]),
                 'Pgen': np.array([gen.Pgen for gen in model.generators]),
-                'Qgen': np.array([gen.Qgen for gen in model.generators])
+                'Qgen': np.array([gen.Qgen for gen in model.generators]),
+                'Pgen_fixed': np.array([bus.Pgen_fixed for bus in model.buses]),
+                'Qgen_fixed': np.array([bus.Qgen_fixed for bus in model.buses])
             }
         }
 
@@ -286,3 +293,6 @@ class Solver:
         self.__state_dict['variables']['Qflow'] = Qflow
 
         return solver
+
+    def disable_generator(self, gen):
+        return self.state_dict()['variables']['lg'][gen.id] == 0

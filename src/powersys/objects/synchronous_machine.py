@@ -78,6 +78,14 @@ class Generator(object):
         
         self.Eexc = 0
 
+        self.active = 1
+
+    def turn_off(self):
+        self.active = 0
+
+    def turn_on(self):
+        self.active = 1
+
     def compute_terminal_values(self, Vt, It):
         self.Vt = Vt
         self.It = It

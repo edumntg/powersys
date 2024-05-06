@@ -108,13 +108,19 @@ class OPF(Solver):
         # Get apparent power
 
         #return self.Pflow[line.from_bus, line.to_bus]**2 + self.Qflow[line.from_bus, line.to_bus]**2 <= line.mva**2
-        return self.state_dict()['variables']['Pflow'][line.from_bus, line.to_bus]**2 <= line.mva**2
+        Pflow = self.state_dict()['variables']['Pflow']
+        Qflow = self.state_dict()['variables']['Qflow']
+        return Pflow[line.from_bus, line.to_bus]**2 + Qflow[line.from_bus, line.to_bus]**2 <= line.mva**2
+        #return self.state_dict()['variables']['Pflow'][line.from_bus, line.to_bus]**2 <= line.mva**2
     
     def __opf_constr_line_max_mva_tofrom(self, line):
         # Get apparent power
 
         #return self.Pflow[line.to_bus, line.from_bus]**2 + self.Qflow[line.to_bus, line.from_bus]**2 <= line.mva**2
-        return self.state_dict()['variables']['Pflow'][line.to_bus, line.from_bus]**2 <= line.mva**2
+        Pflow = self.state_dict()['variables']['Pflow']
+        Qflow = self.state_dict()['variables']['Qflow']
+        return Pflow[line.to_bus, line.from_bus]**2 + Qflow[line.to_bus, line.from_bus]**2 <= line.mva**2
+        #return self.state_dict()['variables']['Pflow'][line.to_bus, line.from_bus]**2 <= line.mva**2
 
     def __opf_constr_bus_voltage_min(self, bus):
         return self.state_dict()['variables']['V'][bus.id] >= bus.Vmin

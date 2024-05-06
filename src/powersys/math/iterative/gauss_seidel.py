@@ -13,6 +13,8 @@ class GaussSeidel(Iterative):
         theta = variables['theta']
         Pgen = variables['Pgen']
         Qgen = variables['Qgen']
+        Pgen_fixed = variables['Pgen_fixed']
+        Qgen_fixed = variables['Qgen_fixed']
         V = np.array([
             np.abs(Vmag[bus.id])*(np.cos(theta[bus.id]) + 1j*np.sin(theta[bus.id]))
             for bus in self.model.buses

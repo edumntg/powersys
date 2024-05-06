@@ -43,7 +43,7 @@ class LF(Solver):
                 'theta': theta,
                 'Pgen': Pgen,
                 'Qgen': Qgen,
-                'lg': np.array([[1] for gen in self.model.generators]),
+                'lg': np.array([[gen.active] for gen in self.model.generators]),
                 'l': np.array([[1] for line in self.model.lines])
             }
 
