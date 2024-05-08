@@ -38,6 +38,7 @@ tests/test_lf.py
 tests/test_lf_scipy.py
 tests/test_loadflow.py
 tests/test_m_reduction.py
+tests/test_newton-raphson.py
 tests/test_opf.py
 tests/test_park_matrix.py
 tests/test_park_transform.py

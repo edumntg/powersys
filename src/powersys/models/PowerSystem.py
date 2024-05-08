@@ -17,6 +17,10 @@ class PowerSystemArgs(Serializable):
 
 class PowerSystem(object):
 
+    SLACK = 1
+    PV = 2
+    PQ = 0
+
     def __init__(self, args: PowerSystemArgs):
         
         self.args = args
@@ -399,12 +403,12 @@ class PowerSystem(object):
     
     @property
     def n_pq(self):
-        pq_buses = self.buses.filter(lambda x: x.type == 3)
+        pq_buses = self.buses.filter(lambda x: x.type == PowerSystem.PQ)
         return len(pq_buses)
     
     @property
     def n_pv(self):
-        pv_buses = self.buses.filter(lambda x: x.type == 2)
+        pv_buses = self.buses.filter(lambda x: x.type == PowerSystem.PV)
         return len(pv_buses)
 
     @property
@@ -438,8 +442,8 @@ class PowerSystem(object):
     def check(self):
         for bus in self.buses:
             gen = self.get_gen_by_bus(bus.id)
-            if gen and bus.type == 3:
+            if gen and bus.type == PowerSystem.PQ:
                 print(f"Bus {bus.id} defined as PQ but has generator connected. Switched to PV")
-                bus.type = 2
+                bus.type = PowerSystem.PV
         
         return True

@@ -29,14 +29,19 @@ class Solver:
         
         # Create dataframes for results
         data = []
+        Pgen = np.zeros((self.model.n_buses,))
+        Qgen = np.zeros((self.model.n_buses,))
         for bus in self.model.buses:
             # Append results as: V, theta, Pload, Qload, Pgen, Qgen
             row = [bus.id, bus.V, bus.theta, bus.Pload, bus.Qload]
             #Pgen = variables['Pgen_fixed'][bus.id][0] + np.sum([variables['Pgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
             #Qgen = variables['Qgen_fixed'][bus.id][0] + np.sum([variables['Qgen'][gen.bus][0] for gen in self.model.generators if gen.bus == bus.id])
-            Pgen = np.sum([gen.Pgen+bus.Pgen_fixed for gen in self.model.generators if gen.bus == bus.id])
-            Qgen = np.sum([gen.Qgen+bus.Qgen_fixed for gen in self.model.generators if gen.bus == bus.id])
-            row += [Pgen, Qgen, bus.Vmin, bus.Vmax]
+            gen = self.model.get_gen_by_bus(bus.id)
+            if gen:
+                Pgen[bus.id] = variables['Pgen'][gen.id][0]
+                Qgen[bus.id] = variables['Qgen'][gen.id][0]
+
+            row += [Pgen[bus.id]+bus.Pgen_fixed, Qgen[bus.id]+bus.Qgen_fixed, bus.Vmin, bus.Vmax]
 
             data.append(row)
         
@@ -146,11 +151,11 @@ class Solver:
 
         # Add constraints for slack bus
         m.Equations([
-            self.optim_constr_fixed_bus_angle(bus) for bus in self.model.buses if bus.type == 1
+            self.optim_constr_fixed_bus_angle(bus) for bus in self.model.buses if bus.type == PowerSystem.SLACK
         ])
 
         m.Equations([
-            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == 1
+            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == PowerSystem.SLACK
         ])
 
         if self.model.generators.some(lambda gen: gen.active == 0):
@@ -257,6 +262,8 @@ class Solver:
 
         if method == "gauss-seidel":
             solver = GaussSeidel(model, IterativeArgs())
+        elif method == "newton-raphson":
+            solver = NewtonRaphson(model, IterativeArgs())
         elif method == "scipy" or method == "fsolve":
             solver = ScipyFsolve(model, IterativeArgs())
 

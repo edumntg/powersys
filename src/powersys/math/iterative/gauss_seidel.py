@@ -28,7 +28,7 @@ class GaussSeidel(Iterative):
         Vprev = V.copy()
         while err > self.tol and iters < self.max_iters:
             for bus in self.model.buses:
-                if bus.type == 1: # slack
+                if bus.type == PowerSystem.SLACK: # slack
                     continue
 
                 PYV = 0
@@ -53,8 +53,21 @@ class GaussSeidel(Iterative):
 
             if iters >= self.max_iters:
                 print(f"Max. number of iterations ({iters}) reached. Gauss-Seidel method did not converge.")
+                raise Exception("Gauss-Seidel failed!")
             
             Vprev = V.copy()
 
+        # Compute currents
+        I = self.model.Ybus@V
+        S = V*np.conj(I)
+
+        for bus in self.model.buses:
+            if bus.type == PowerSystem.SLACK: # slack
+                P[bus.id] = np.real(S[bus.id])
+                Q[bus.id] = np.imag(S[bus.id])
+            elif bus.type == PowerSystem.PV: #pv
+                P[bus.id] = np.real(S[bus.id]) + bus.Pload
+                Q[bus.id] = np.imag(S[bus.id]) + bus.Qload
+        
         return np.abs(V), np.angle(V), P, Q
             

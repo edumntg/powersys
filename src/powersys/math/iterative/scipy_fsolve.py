@@ -23,10 +23,10 @@ class ScipyFsolve(Iterative):
 
         v = 0
         for bus in self.model.buses:
-            if bus.type == 1: # slack: vars are P and Q
+            if bus.type == PowerSystem.SLACK: # slack: vars are P and Q
                 Pgen[bus.id] = x[v]
                 Qgen[bus.id] = x[v+1]
-            elif bus.type == 2: # pv: vars are theta and Q
+            elif bus.type == PowerSystem.PV: # pv: vars are theta and Q
                 theta[bus.id] = x[v]
                 Qgen[bus.id] = x[v+1]
             else: # pq: vars are V and theta
@@ -45,10 +45,10 @@ class ScipyFsolve(Iterative):
 
         v = 0
         for bus in self.model.buses:
-            if bus.type == 1: # slack: vars are P and Q
+            if bus.type == PowerSystem.SLACK: # slack: vars are P and Q
                 Pgen[bus.id] = x[v]
                 Qgen[bus.id] = x[v+1]
-            elif bus.type == 2: # pv: vars are theta and Q
+            elif bus.type == PowerSystem.PV: # pv: vars are theta and Q
                 theta[bus.id] = x[v]
                 Qgen[bus.id] = x[v+1]
             else: # pq: vars are V and theta
