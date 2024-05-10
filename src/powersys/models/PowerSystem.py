@@ -19,7 +19,7 @@ class PowerSystem(object):
 
     SLACK = 1
     PV = 2
-    PQ = 0
+    PQ = 3
 
     def __init__(self, args: PowerSystemArgs):
         
