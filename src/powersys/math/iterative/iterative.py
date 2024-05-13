@@ -6,7 +6,7 @@ from ...models.powersystem import *
 @dataclass
 class IterativeArgs(Serializable):
     max_iters: Optional[int] = 500
-    tol: Optional[float] = 1E-8
+    tol: Optional[float] = 1E-6
 
 class Iterative():
     def __init__(self, model: PowerSystem, args: IterativeArgs):

@@ -62,95 +62,114 @@ class NewtonRaphson(Iterative):
             J4.fill(0)
 
             # J1 will contain all derivatives of P with respect to angles
-            for m in range(self.model.N-1):
+            m = 0
+            for i, bus_i in enumerate(self.model.buses): # This loop will contain all theta variables with respect with are calculating derivatives
+                if bus_i.type == PowerSystem.SLACK: # ignore slack bus because theta changes only for PV and PQ buses
+                    continue
+                
                 n = 0
-                for i, bus_i in enumerate(self.model.buses):
-                    if bus_i.type == PowerSystem.SLACK: # ignore slack bus
+                for k, bus_k in enumerate(self.model.buses): # This loop controls the variable with respect to which we are calculating the derivative (theta2, theta3...)
+                    # We are calculating the derivative with respect to buses that have variable angles. That is, we ignore slack buses
+                    if bus_k.type == PowerSystem.SLACK:
                         continue
+                        
+                    # Now, we use an additional loop to calculate all flows from i to buses 1..n
+                    if i == k: # All terms of Pi are dependent of theta_k, so all derivatives are ~= 0
+                        for j, bus_j in enumerate(self.model.buses):
+                            J1[m,n] += V[i]*V[j]*(-G[i,j]*np.sin(theta[i] - theta[j]) + B[i,j]*np.cos(theta[i] - theta[j]))
 
-                    dPi_dthetak = 0
-                    for k, bus_k in enumerate(self.model.buses):
-                        # We compute dPdtheta with respect to angles of PV and PQ buses
-                        if bus_k.type == PowerSystem.SLACK:
-                            continue
+                        J1[m,n] += -V[i]**2 * B[i,i]
 
-                        if i == k:
-                            dPi_dthetak = V[i]*V[k]*(-G[i,k]*np.sin(theta[i] - theta[k]) + B[i,k]*np.cos(theta[i] - theta[k]))
-                        else:
-                            dPi_dthetak = V[i]*V[k]*(G[i,k]*np.sin(theta[i] - theta[k]) - B[i,k]*np.cos(theta[i] - theta[k]))
-
-                    J1[m,n] = dPi_dthetak
+                    else: # Only term for j == k is different from zero
+                        J1[m,n] = V[i]*V[j]*(G[i,j]*np.sin(theta[i] - theta[j]) - B[i,j]*np.cos(theta[i] - theta[j]))
+                    
                     n += 1
+                
+                m += 1
 
             # J2 will contain all derivatives of P with respect to voltages
-            for m in range(self.model.N-1):
+            m = 0
+            for i, bus_i in enumerate(self.model.buses): # This loop will contain all voltage variables with respect with are calculating derivatives
+                if bus_i.type == PowerSystem.SLACK:
+                    continue
+                
                 n = 0
-                for i, bus_i in enumerate(self.model.buses):
-                    if bus_i.type != PowerSystem.PQ: # consider PQ buses only
+                for k, bus_k in enumerate(self.model.buses): # This loop controls the variable with respect to which we are calculating the derivative (V2, V3...)
+                    # We are calculating the derivative with respect to buses that have variable voltages. That is, we ignore slack/pv buses
+                    if bus_k.type != PowerSystem.PQ:
                         continue
+                        
+                    # Now, we use an additional loop to calculate all flows from i to buses 1..n
+                    if i == k: # All terms of Pi are dependent of theta_k, so all derivatives are ~= 0
+                        for j, bus_j in enumerate(self.model.buses):
+                            J2[m,n] += 2*V[i]*(-G[i,j] + g[i,j]) + V[j]*(G[i,j]*np.cos(theta[i] - theta[j]) + B[i,j]*np.sin(theta[i] - theta[j]))
+                        
+                        J2[m,n] += V[i]*G[i,i]
 
-                    dPi_dVk = 0
-                    for k, bus_k in enumerate(self.model.buses):
-                        # We compute dPdV with respect to voltages of PQ buses
-                        if bus_k.type != PowerSystem.PQ:
-                            continue
-
-                        if i == k:
-                            dPi_dVk = 2*V[i]*(-G[i,k] + g[i,k]) + V[k]*(G[i,k]*np.cos(theta[i] - theta[k]) + B[i,k]*np.sin(theta[i] - theta[k]))
-                        else:
-                            dPi_dVk = V[i]*(G[i,k]*np.cos(theta[i] - theta[k]) + B[i,k]*np.sin(theta[i] - theta[k]))
-
-                    J2[m,n] = dPi_dVk
+                    else: # Only term for j == k is different from zero
+                        J2[m,n] = V[i]*(G[i,j]*np.cos(theta[i] - theta[j]) + B[i,j]*np.sin(theta[i] - theta[j]))
+                    
                     n += 1
+                
+                m += 1
 
             # J3 will contain all derivatives of Q with respect to angles
-            for m in range(self.model.n_pq):
+            m = 0
+            for i, bus_i in enumerate(self.model.buses): # This loop will contain all theta variables with respect with are calculating derivatives
+                if bus_i.type != PowerSystem.PQ: # ignore slack/pv buses
+                    continue
+                
                 n = 0
-                for i, bus_i in enumerate(self.model.buses):
-                    if bus_i.type == PowerSystem.SLACK: # consider PQ buses only
+                for k, bus_k in enumerate(self.model.buses): # This loop controls the variable with respect to which we are calculating the derivative (theta2, theta3...)
+                    # We are calculating the derivative with respect to buses that have variable angles. That is, we ignore slack buses
+                    if bus_k.type == PowerSystem.SLACK:
                         continue
+                        
+                    # Now, we use an additional loop to calculate all flows from i to buses 1..n
+                    if i == k: # All terms of Pi are dependent of theta_k, so all derivatives are ~= 0
+                        for j, bus_j in enumerate(self.model.buses):
+                            J3[m,n] += V[i]*V[j]*(B[i,j]*np.sin(theta[i] - theta[j]) + G[i,j]*np.cos(theta[i] - theta[j]))
 
-                    dQi_dthetak = 0
-                    for k, bus_k in enumerate(self.model.buses):
-                        # We compute dPdV with respect to voltages of PQ buses
-                        if bus_k.type == PowerSystem.SLACK:
-                            continue
+                        J3[m,n] += -V[i]**2 *G[i,i]
 
-                        if i == k:
-                            dQi_dthetak = V[i]*V[k]*(B[i,k]*np.cos(theta[i] - theta[k]) + G[i,k]*np.sin(theta[i] - theta[k]))
-                        else:
-                            dQi_dthetak = V[i]*V[k]*(-B[i,k]*np.sin(theta[i] - theta[k]) - G[i,k]*np.cos(theta[i] - theta[k]))
-
-                    J3[m,n] = dQi_dthetak
+                    else: # Only term for j == k is different from zero
+                        J3[m,n] = V[i]*V[j]*(-B[i,j]*np.sin(theta[i] - theta[j]) - G[i,j]*np.cos(theta[i] - theta[j]))
+                    
                     n += 1
+
+                m += 1
 
             # J4 will contain all derivatives of Q with respect to voltages
-            for m in range(self.model.n_pq):
+            m = 0
+            for i, bus_i in enumerate(self.model.buses): # This loop will contain all theta variables with respect with are calculating derivatives
+                if bus_i.type != PowerSystem.PQ: # ignore slack/pv buses
+                    continue
+                
                 n = 0
-                for i, bus_i in enumerate(self.model.buses):
-                    if bus_i.type != PowerSystem.PQ: # consider PQ buses only
+                for k, bus_k in enumerate(self.model.buses): # This loop controls the variable with respect to which we are calculating the derivative (V2, V3...)
+                    # We are calculating the derivative with respect to buses that have variable voltages. That is, we ignore slack/pv buses
+                    if bus_k.type != PowerSystem.PQ:
                         continue
+                        
+                    # Now, we use an additional loop to calculate all flows from i to buses 1..n
+                    if i == k: # All terms of Pi are dependent of theta_k, so all derivatives are ~= 0
+                        for j, bus_j in enumerate(self.model.buses):
+                            J4[m,n] += 2*V[i]*(B[i,j] - b[i,j]) + V[j]*(-B[i,j]*np.cos(theta[i] - theta[j]) + G[i,j]*np.sin(theta[i] - theta[j]))
 
-                    dQi_dVk = 0
-                    for k, bus_k in enumerate(self.model.buses):
-                        # We compute dQdV with respect to voltages of PQ buses
-                        if bus_k.type != PowerSystem.PQ:
-                            continue
+                        J4[m,n] += -V[i]*B[i,i]
 
-                        if i == k:
-                            dQi_dVk = 2*V[i]*(B[i,k] - b[i,k]) + V[k]*(-B[i,k]*np.cos(theta[i] - theta[k]) + G[i,k]*np.sin(theta[i] - theta[k]))
-                        else:
-                            dQi_dVk = V[i]*(-B[i,k]*np.cos(theta[i] - theta[k]) + G[i,k]*np.sin(theta[i] - theta[k]))
-
-                    J4[m,n] = dQi_dVk
+                    else: # Only term for j == k is different from zero
+                        J4[m,n] = V[i]*(-B[i,j]*np.cos(theta[i] - theta[j]) + G[i,j]*np.sin(theta[i] - theta[j]))
+                    
                     n += 1
+                
+                m += 1
 
             # Construct Jacobian
             J = np.vstack((
                 np.hstack((J1, J2)),
                 np.hstack((J3, J4))
             ))
-            print(J)
 
             # Compute mismatches
             deltaP = Psp - P
@@ -160,7 +179,7 @@ class NewtonRaphson(Iterative):
             dPQ = np.zeros((self.model.n_pv + 2*self.model.n_pq, 1))
             m = 0
             for i, bus in enumerate(self.model.buses):
-                if bus.type != PowerSystem.PV:
+                if bus.type == PowerSystem.SLACK:
                     continue
 
                 dPQ[m] = deltaP[i]
@@ -176,32 +195,17 @@ class NewtonRaphson(Iterative):
             # Compute corrections in variables
             dx = np.linalg.solve(J, dPQ) # [dtheta, dV]
 
-            # Compute new variables
-            m = 0
-            # Update angles
-            for i, bus in enumerate(self.model.buses):
-                if bus.type != PowerSystem.SLACK:
-                    x[i] += dx[m]
-                    m += 1
+            dtheta = dx[:self.model.N-1]
+            dV = dx[self.model.N-1:]
 
-            # Update voltages
-            for i, bus in enumerate(self.model.buses):
-                if bus.type == PowerSystem.PQ:
-                    x[i] += dx[m]
-                    m += 1 
+            x[1:self.model.N] += dtheta
+            x[-self.model.n_pq:] += dV
 
             # Compute errors
             err = np.max(np.abs(dx))
 
-            # For slack and PV buses, fix voltages
-            # for i, bus in enumerate(self.model.buses):
-            #     if bus.type == PowerSystem.SLACK:
-            #         x[self.model.N+i] = bus.V
-            #         x[i] = bus.angle
-            #     elif bus.type == PowerSystem.PV:
-            #         x[self.model.N+i] = bus.V
             # Print error
-            print(f"Iteration {iters}, error {err}")
+            # print(f"Iteration {iters}, error {err}")
 
         theta = x[:self.model.N]
         V = x[self.model.N:]
@@ -220,4 +224,4 @@ class NewtonRaphson(Iterative):
                 P[bus.id] = np.real(S[bus.id]) + bus.Pload
                 Q[bus.id] = np.imag(S[bus.id]) + bus.Qload
 
-        return np.abs(V), np.angle(V), P, Q
+        return np.abs(V)[:,0], np.angle(V)[:,0], P[:,0], Q[:,0]
