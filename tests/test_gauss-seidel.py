@@ -15,7 +15,7 @@ system = ps.models.PowerSystem(args)
 solver = ps.solvers.LF(system)
 
 # Solve
-solver.solve(disp = True, method = "gauss-seidel")
+solver.solve(disp = True, method = "gauss-seidel", tol = 1e-9, verbose = True)
 print([gen.Pgen for gen in system.generators])
 buses, gens, lines = solver.extract_results()
 print("Optimization problem solved. Press enter to continue...")

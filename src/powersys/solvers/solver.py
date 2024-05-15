@@ -258,14 +258,14 @@ class Solver:
             gen.Pgen = Pgen[gen.id]
             gen.Qgen = Qgen[gen.id]
 
-    def construct_iterative_solver(self, model: PowerSystem, method = "gauss-seidel"):
+    def construct_iterative_solver(self, model: PowerSystem, method = "gauss-seidel", args = IterativeArgs()):
 
         if method == "gauss-seidel":
-            solver = GaussSeidel(model, IterativeArgs())
+            solver = GaussSeidel(model, args)
         elif method == "newton-raphson":
-            solver = NewtonRaphson(model, IterativeArgs())
+            solver = NewtonRaphson(model, args)
         elif method == "scipy" or method == "fsolve":
-            solver = ScipyFsolve(model, IterativeArgs())
+            solver = ScipyFsolve(model, args)
 
         self.__state_dict = {
             'solver': solver,

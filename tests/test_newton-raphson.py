@@ -15,7 +15,7 @@ system = ps.models.PowerSystem(args)
 solver = ps.solvers.LF(system)
 
 # Solve
-solver.solve(disp = True, method = "newton-raphson")
+solver.solve(disp = True, method = "newton-raphson", verbose = True, tol = 1e-9)
 
 buses, gens, lines = solver.extract_results()
 print("Optimization problem solved. Press enter to continue...")

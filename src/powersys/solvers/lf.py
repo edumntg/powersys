@@ -1,12 +1,13 @@
 from ..models.powersystem import PowerSystem
 from .solver import *
+from ..math.iterative import IterativeArgs
 
 class LF(Solver):
 
     def __init__(self, model: PowerSystem):
         super().__init__(model)
 
-    def solve(self, disp = True, method = "default"):
+    def solve(self, disp = True, method = "default", **kwargs):
         print("METHOD:", method)
         if not self.model:
             raise "No PowerSystem object declared"
@@ -19,11 +20,11 @@ class LF(Solver):
         if method == "default":
             self.construct_model_solver()
         elif method == "gauss-seidel" or method == "gs":
-            self.construct_iterative_solver(self.model, "gauss-seidel")
+            self.construct_iterative_solver(self.model, "gauss-seidel", IterativeArgs(**kwargs))
         elif method =="newton-raphson" or method == "nr":
-            self.construct_iterative_solver(self.model, "newton-raphson")
+            self.construct_iterative_solver(self.model, "newton-raphson", IterativeArgs(**kwargs))
         elif method == "scipy" or method == "fsolve":
-            self.construct_iterative_solver(self.model, "scipy")
+            self.construct_iterative_solver(self.model, "scipy", IterativeArgs(**kwargs))
         else:
             raise "Invalid LF solver method specified. Got: " + method
 

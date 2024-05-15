@@ -1,7 +1,7 @@
 from .iterative import *
 from ...models import PowerSystem
-
 import numpy as np
+from tabulate import tabulate
 
 class GaussSeidel(Iterative):
     def __init__(self, model: PowerSystem, args: IterativeArgs):
@@ -26,6 +26,8 @@ class GaussSeidel(Iterative):
         iters = 1
         err = 1E9
         Vprev = V.copy()
+
+        results_table = []
         while err > self.tol and iters < self.max_iters:
             for bus in self.model.buses:
                 if bus.type == PowerSystem.SLACK: # slack
@@ -49,14 +51,21 @@ class GaussSeidel(Iterative):
 
             # Compute error
             err = np.max(np.abs(np.abs(V) - np.abs(Vprev)))
+            results_table.append([iters, err])
+
             iters += 1
 
-            if iters >= self.max_iters:
-                print(f"Max. number of iterations ({iters}) reached. Gauss-Seidel method did not converge.")
-                raise Exception("Gauss-Seidel failed!")
-            
             Vprev = V.copy()
 
+        if self.args.verbose:
+            print(tabulate(results_table, headers = ["Iter No.", "Error"]))
+
+        if iters < self.max_iters:
+            print(f"Load flow solved in {iters} iterations!")
+        else:
+            print(f"Max. number of iterations ({iters}) reached. Gauss-Seidel method did not converge.")
+            raise Exception("Load Flow did not converge!")
+            
         # Compute currents
         I = self.model.Ybus@V
         S = V*np.conj(I)

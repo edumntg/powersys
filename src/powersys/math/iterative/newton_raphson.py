@@ -1,7 +1,7 @@
 from .iterative import *
 from ...models import PowerSystem
-
 import numpy as np
+from tabulate import tabulate
 
 class NewtonRaphson(Iterative):
     def __init__(self, model: PowerSystem, args: IterativeArgs):
@@ -36,6 +36,7 @@ class NewtonRaphson(Iterative):
         # J4 will have size: (n_pq, n_pq)
         J4 = np.zeros((self.model.n_pq, self.model.n_pq))
 
+        results_table = []
         while err > self.tol and iters < self.max_iters:
             iters += 1
 
@@ -198,14 +199,26 @@ class NewtonRaphson(Iterative):
             dtheta = dx[:self.model.N-1]
             dV = dx[self.model.N-1:]
 
+            
+            # Update angle for all non-slack buses
             x[1:self.model.N] += dtheta
+
+            # Update voltage for all PQ buses
             x[-self.model.n_pq:] += dV
 
             # Compute errors
             err = np.max(np.abs(dx))
 
-            # Print error
-            # print(f"Iteration {iters}, error {err}")
+            results_table.append([iters, err])
+
+        if self.args.verbose:
+            print(tabulate(results_table, headers = ["Iter No.", "Error"]))
+
+        if iters < self.max_iters:
+            print(f"Load flow solved in {iters} iterations!")
+        else:
+            print(f"Max. number of iterations reached. Load flow did not converge!")
+            raise Exception("Load Flow did not converge!")
 
         theta = x[:self.model.N]
         V = x[self.model.N:]
