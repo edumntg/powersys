@@ -250,7 +250,7 @@ class Solver:
         # Assign results
         for bus in self.model.buses:
             bus.V = V[bus.id]
-            bus.theta = theta[bus.id]
+            bus.angle = theta[bus.id]
             bus.Pgen = np.sum([Pgen[gen.id] for gen in self.model.generators if gen.bus == bus.id])
             bus.Qgen = np.sum([Qgen[gen.id] for gen in self.model.generators if gen.bus == bus.id])
 

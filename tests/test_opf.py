@@ -25,5 +25,4 @@ print(gens)
 input()
 print(lines)
 
-print(str(system))
-
+system.plot(pu=False, radians=False)

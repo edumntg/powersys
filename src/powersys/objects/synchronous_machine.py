@@ -1,61 +1,117 @@
 import numpy as np
 
 class Generator(object):
-    def __init__(self, data):
-        self.id = int(data[0])
-        self.bus = int(data[1])
-        self.c = data[2]
-        self.b = data[3]
-        self.a = data[4]
-        self.Pmin = data[5]
-        self.Pmax = data[6]
-        self.Qmin = data[7]
-        self.Qmax = data[8]
+    PUBLIC_ID = 0
+    def __init__(self, 
+             id, 
+             bus, 
+             c, 
+             b, 
+             a, 
+             Pmin, 
+             Pmax, 
+             Qmin, 
+             Qmax, 
+             Ra, 
+             Xd, 
+             Xq, 
+             Xdp, 
+             Xqp, 
+             Xdpp, 
+             Xqpp, 
+             Td0p, 
+             Tq0p, 
+             Td0pp, 
+             Tq0pp, 
+             H, 
+             USE_CAGE, 
+             USE_AGC, 
+             Kv, 
+             Ki, 
+             Kt, 
+             R, 
+             Tv, 
+             Tt, 
+             USE_AVR, 
+             Kmed, 
+             Kexc, 
+             Ka, 
+             Tmed, 
+             Texc, 
+             Ta, 
+             Kd, 
+             Kp, 
+             Kvi, 
+             Vexc_min, 
+             Vexc_max, 
+             USE_PSS, 
+             Kest, 
+             Tw, 
+             T1, 
+             T2, 
+             T3, 
+             T4, 
+             Vpc2_min, 
+             Vpc2_max):
+        
+        if id is None:
+            id = Generator.PUBLIC_ID
+            Generator.PUBLIC_ID += 1
+                
+        self.id = int(id)
+        self.bus = int(bus)
+        self.c = c
+        self.b = b
+        self.a = a
+        self.Pmin = Pmin
+        self.Pmax = Pmax
+        self.Qmin = Qmin
+        self.Qmax = Qmax
         self.Pgen = 0
         self.Qgen = 0
 
         # Generator values like impedances, reactances, etc
-        self.Ra = data[9]
-        self.Xd = data[10]
-        self.Xq = data[11]
-        self.Xdp = data[12]
-        self.Xqp = data[13]
-        self.Xdpp = data[14]
-        self.Xqpp = data[15]
-        self.Td0p = data[16]
-        self.Tq0p = data[17]
-        self.Td0pp = data[18]
-        self.Tq0pp = data[19]
-        self.H = data[20]
-        self.USE_CAGE = data[21] == 1
-        self.USE_AGC = data[22] == 1
-        self.Kv = data[23]
-        self.Ki = data[24]
-        self.Kt = data[25]
-        self.R = data[26]
-        self.Tv = data[27]
-        self.Tt = data[28]
-        self.USE_AVR = data[29] == 1
-        self.Kmed = data[30]
-        self.Kexc = data[31]
-        self.Ka = data[32]
-        self.Tmed = data[33]
-        self.Texc = data[34]
-        self.Ta = data[35]
-        self.Kd = data[36]
-        self.Kp = data[37]
-        self.Kvi = data[38]
-        self.Vexc_min = data[39]
-        self.Vexc_max = data[40]
-        self.USE_PSS = data[41] == 1
-        self.Kest = data[42]
-        self.Tw = data[43]
-        self.T1 = data[44]
-        self.T2 = data[45]
-        self.T3 = data[46]
-        self.T4 = data[47]
-        self.Vpc2_min = data[48]
-        self.Vpc2_max = data[49]
+        self.Ra = Ra
+        self.Xd = Xd
+        self.Xq = Xq
+        self.Xdp = Xdp
+        self.Xqp = Xqp
+        self.Xdpp = Xdpp
+        self.Xqpp = Xqpp
+        self.Td0p = Td0p
+        self.Tq0p = Tq0p
+        self.Td0pp = Td0pp
+        self.Tq0pp = Tq0pp
+        self.H = H
+        self.USE_CAGE = USE_CAGE == 1
+        self.USE_AGC = USE_AGC == 1
+        self.Kv = Kv
+        self.Ki = Ki
+        self.Kt = Kt
+        self.R = R
+        self.Tv = Tv
+        self.Tt = Tt
+        self.USE_AVR = USE_AVR == 1
+        self.Kmed = Kmed
+        self.Kexc = Kexc
+        self.Ka = Ka
+        self.Tmed = Tmed
+        self.Texc = Texc
+        self.Ta = Ta
+        self.Kd = Kd
+        self.Kp = Kp
+        self.Kvi = Kvi
+        self.Vexc_min = Vexc_min
+        self.Vexc_max = Vexc_max
+        self.USE_PSS = USE_PSS == 1
+        self.Kest = Kest
+        self.Tw = Tw
+        self.T1 = T1
+        self.T2 = T2
+        self.T3 = T3
+        self.T4 = T4
+        self.Vpc2_min = Vpc2_min
+        self.Vpc2_max = Vpc2_max
 
         self.Vt = 0
         self.It = 0
@@ -119,3 +175,6 @@ class Generator(object):
     @staticmethod
     def from_dict(dictio):
         return Generator(list(dictio.values()))
+    
+    def as_list(self):
+        return list(self.__dict__.values())

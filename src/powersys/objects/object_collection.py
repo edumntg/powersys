@@ -1,4 +1,5 @@
 import pandas as pd
+from tabulate import tabulate
 
 class ObjectCollection(object):
 
@@ -18,7 +19,14 @@ class ObjectCollection(object):
         return self.items[index]
     
     def __str__(self):
-        return "\n".join([str(item) for item in self.items])
+        #return "\n".join([str(item) for item in self.items])
+
+        headers = list(self.items[0].__dict__.keys())
+        table = []
+        for item in self.items:
+            table.append(item.as_list())
+        
+        return tabulate(table, headers = headers)
     
     def __len__(self):
         return len(self.items)

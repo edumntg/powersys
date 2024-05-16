@@ -11,6 +11,7 @@ args = ps.models.PowerSystemArgs(
 )
 
 system = ps.models.PowerSystem(args)
+
 #system.generators[2].turn_off() # disable generator
 
 solver = ps.solvers.LF(system)

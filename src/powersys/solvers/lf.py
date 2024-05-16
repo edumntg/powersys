@@ -40,7 +40,7 @@ class LF(Solver):
             # Assign results to system
             for bus in self.model.buses:
                 bus.V = V[bus.id]
-                bus.theta = theta[bus.id]
+                bus.angle = theta[bus.id]
             
             for gen in self.model.generators:
                 gen.Pgen = Pgen[gen.id]
@@ -51,7 +51,7 @@ class LF(Solver):
             # Assign results
             for bus in self.model.buses:
                 bus.V = V[bus.id]
-                bus.theta = theta[bus.id]
+                bus.angle = theta[bus.id]
 
                 gen = self.model.get_gen_by_bus(bus.id)
                 if gen:

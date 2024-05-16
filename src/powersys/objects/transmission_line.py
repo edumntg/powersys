@@ -1,17 +1,25 @@
 import numpy as np
 class Line(object):
-    def __init__(self, data):
-        self.id = int(data[0])
-        self.from_bus = int(data[1])
-        self.to_bus = int(data[2])
-        self.R = data[3]
-        self.X = data[4]
+
+    PUBLIC_ID = 0
+
+    def __init__(self, id = None, from_bus = None, to_bus = None, R = np.inf, X = np.inf, B = 0.0, a = 1.0, mva = np.inf):
+        if id is None:
+            id = Line.PUBLIC_ID
+            Line.PUBLIC_ID += 1
+
+        self.id = int(id)
+        self.from_bus = int(from_bus)
+        self.to_bus = int(to_bus)
+        self.R = R
+        self.X = X
         self.Z = self.R + 1j*self.X
-        self.B = data[5]
-        self.a = data[6]
-        self.mva = data[7]
+        self.B = B
+        self.a = a
+        self.mva = mva
         #self.mva = 100
 
+    @property
     def Y(self):
         return 1.0/self.Z
     
@@ -41,3 +49,6 @@ class Line(object):
     @staticmethod
     def from_dict(dictio):
         return Line(list(dictio.values()))
+    
+    def as_list(self):
+        return list(self.__dict__.values())

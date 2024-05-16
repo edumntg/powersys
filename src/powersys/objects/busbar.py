@@ -1,22 +1,39 @@
 import math
+class Busbar(object):
 
-class Bus(object):
+    PUBLIC_ID = 0
 
-    def __init__(self, data):
-        self.id = int(data[0])
-        self.type = int(data[1])
-        self.V = data[2]
-        self.theta = data[3]
-        self.Pgen = data[4]
-        self.Qgen = data[5]
-        self.Pload = data[6]
-        self.Qload = data[7]
-        self.Vmin = data[8]
-        self.Vmax = data[9]
+    def __init__(
+            self,
+            id = None,
+            type = None,
+            V = 1.0,
+            angle = 0.0,
+            Pgen = 0.0,
+            Qgen = 0.0,
+            Pload = 0.0,
+            Qload = 0.0,
+            Vmin = 0.95,
+            Vmax = 1.05
+    ):
+        
+        if id is None:
+            id = Busbar.PUBLIC_ID
+            Busbar.PUBLIC_ID += 1
+        
+        self.id = int(id)
+        self.type = type
+        self.V = V
+        self.angle = angle
+        self.Pgen = Pgen
+        self.Qgen = Qgen
+        self.Pload = Pload
+        self.Qload = Qload
+        self.Vmin = Vmin
+        self.Vmax = Vmax
 
-        # Fixed generation
-        self.Pgen_fixed = data[4]
-        self.Qgen_fixed = data[5]
+        self.Pgen_fixed = Pgen
+        self.Qgen_fixed = Qgen
     
     @property
     def P(self):
@@ -31,8 +48,8 @@ class Bus(object):
         return self.V
 
     @property
-    def angle(self):
-        return self.theta
+    def theta(self):
+        return self.angle
     
     @property
     def S(self):
@@ -44,7 +61,10 @@ class Bus(object):
     
     @staticmethod
     def from_dict(dictio):
-        return Bus(list(dictio.values()))
+        return Busbar(list(dictio.values()))
+    
+    def as_list(self):
+        return list(self.__dict__.values())
 
     def __str__(self):
         return f"{self.id} - [{self.V:.2f}V, {self.theta:.2f}rads, P={self.Pgen:.2f}, Q={self.Qgen:.2f}, Vmin={self.Vmin:.2f}, Vmax={self.Vmax:.2f}]"

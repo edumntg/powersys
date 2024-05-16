@@ -1,19 +1,25 @@
 import numpy as np
 import pandas as pd
 from ..objects.object_collection import ObjectCollection
-from ..objects.busbar import Bus
-from ..objects.transmission_line import Line
-from ..objects.synchronous_machine import Generator
+# from ..objects.busbar import Busb
+# from ..objects.transmission_line import Line
+# from ..objects.synchronous_machine import Generator
+from ..objects import *
 from dataclasses import dataclass
 from simple_parsing.helpers import Serializable
 import json
+from typing import Optional
+import networkx as nx
+import matplotlib.pyplot as plt
 
 @dataclass
 class PowerSystemArgs(Serializable):
-    buses: ObjectCollection
-    lines: ObjectCollection
-    generators: ObjectCollection
-    f: int = 60 # Hz
+    buses: Optional[ObjectCollection] = ObjectCollection()
+    lines: Optional[ObjectCollection] = ObjectCollection()
+    generators: Optional[ObjectCollection] = ObjectCollection()
+    f: Optional[int] = 60 # Hz
+    mva_base: Optional[float] = 100# in MVA
+    v_base: Optional[float] = 100# in kV
 
 class PowerSystem(object):
 
@@ -21,11 +27,11 @@ class PowerSystem(object):
     PV = 2
     PQ = 3
 
-    def __init__(self, args: PowerSystemArgs):
+    def __init__(self, args: PowerSystemArgs = PowerSystemArgs()):
         
         self.args = args
 
-        self.f = self.args.f # Hz
+        self.f = self.args.f # Hz        
         self.w = 2*np.pi*self.f
         self.buses = args.buses
         self.generators = args.generators
@@ -52,12 +58,12 @@ class PowerSystem(object):
 
         # Loop through lines
         for line in self.lines:
+            
+            self.Ybus[line.from_bus, line.from_bus] += line.Y * (1.0/line.a**2)
+            self.Ybus[line.to_bus, line.to_bus] += line.Y * (1.0/line.a**2)
 
-            self.Ybus[line.from_bus, line.from_bus] += line.Y() * (1.0/line.a**2)
-            self.Ybus[line.to_bus, line.to_bus] += line.Y() * (1.0/line.a**2)
-
-            self.Ybus[line.from_bus, line.to_bus] -= line.Y() * 1.0/line.a
-            self.Ybus[line.to_bus, line.from_bus] -= line.Y() * 1.0/line.a
+            self.Ybus[line.from_bus, line.to_bus] -= line.Y * 1.0/line.a
+            self.Ybus[line.to_bus, line.from_bus] -= line.Y * 1.0/line.a
 
             # Add shunts
             self.Ybus[line.from_bus, line.from_bus] += 1j*line.B/2.0
@@ -107,7 +113,7 @@ class PowerSystem(object):
             # Take each row and create a new object_class element
             collection = ObjectCollection()
             for row in data:
-                collection.add(object_class(row))
+                collection.add(object_class(*row))
 
             return collection
         except Exception as e:
@@ -116,7 +122,7 @@ class PowerSystem(object):
     @staticmethod
     def load_buses(filename):
         if filename.endswith('.csv'): # csvfile
-            return PowerSystem.load_from_csv(filename, Bus)
+            return PowerSystem.load_from_csv(filename, Busbar)
     
     @staticmethod
     def load_lines(filename):
@@ -384,7 +390,6 @@ class PowerSystem(object):
     def transient_analysis(self):
         pass
 
-
     @property
     def N(self):
         return len(self.buses)
@@ -440,10 +445,87 @@ class PowerSystem(object):
         return f"Buses:\n{str(self.buses)}\n\nLines:\n{str(self.lines)}\n\nGenerators:\n{str(self.generators)}"
     
     def check(self):
+        if len(self.buses):
+            return
+        
         for bus in self.buses:
             gen = self.get_gen_by_bus(bus.id)
             if gen and bus.type == PowerSystem.PQ:
                 print(f"Bus {bus.id} defined as PQ but has generator connected. Switched to PV")
                 bus.type = PowerSystem.PV
+
+            if bus.type is None:
+                raise Exception(f"Busbar {bus.id} has no valid type. Got: {bus.type}")
         
         return True
+    
+    def add(self, item):
+        """
+        Add buses, lines or generators to the model
+        """
+        if isinstance(item, Busbar):
+            self.buses.add(item)
+        elif isinstance(item, Line):
+            self.lines.add(item)
+        elif isinstance(item, Generator):
+            self.generators.add(item)
+        else:
+            raise Exception("Invalid type of Power System object. Got: " + type(item))
+        
+    def get_graph(self):
+        # If no buses or lines, raise exception
+        if len(self.buses) == 0 or len(self.lines) == 0:
+            raise Exception("No buses or lines specified. Impossible to build graph network")
+
+        # Construct a new graph
+        G = nx.Graph()
+
+        # Add buses as nodes
+        for bus in self.buses:
+            G.add_node(bus.id, P=bus.Pgen, Q=bus.Qgen)
+
+        # Now add edges
+        for line in self.lines:
+            G.add_edge(line.from_bus, line.to_bus, P = 0.0, Q = 0.0)
+
+        return G
+    
+    def plot(self, pu = True, zero_index = True, radians = False):
+        G = self.get_graph()
+
+        pos = nx.spring_layout(G)
+
+        # Plot
+        plt.figure()
+        nx.draw(G, with_labels = True)
+
+        angle_multiplier = 1.0
+        if radians:
+            angle_multiplier = 180.0/np.pi
+
+        mva_multiplier = 1.0
+        v_multiplier = 1.0
+        if not pu:
+            mva_multiplier = self.args.mva_base
+            v_multiplier = self.args.v_base
+
+        # create labels for each node
+        node_labels = {}
+        for bus in self.buses:
+            node_labels[bus.id] = "V={:.2f}∠{:.2f}\nP={:.4f}\nQ={:.4f}".format(bus.V*v_multiplier, bus.angle*angle_multiplier, bus.Pgen*mva_multiplier, bus.Qgen*mva_multiplier)
+
+        edge_labels = {}
+        for line in self.lines:
+            from_bus = self.get_bus(line.from_bus)
+            to_bus = self.get_bus(line.to_bus)
+            P = line.Pflow([from_bus.V, to_bus.V], [from_bus.angle, to_bus.angle])
+            Q = line.Qflow([from_bus.V, to_bus.V], [from_bus.angle, to_bus.angle])
+            edge_labels[(line.from_bus, line.to_bus)] = "P={:.4f}\nQ={:.4f}".format(P*mva_multiplier, Q*mva_multiplier)
+
+        # node_labels = nx.get_node_attributes(G, 'P')
+        nx.draw_networkx_labels(G, pos, labels = node_labels)
+        # edge_labels = nx.get_edge_attributes(G, 'P')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        plt.show()
+
+        
