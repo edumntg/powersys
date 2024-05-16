@@ -7,14 +7,15 @@ class NewtonRaphson(Iterative):
     def __init__(self, model: PowerSystem, args: IterativeArgs):
         super().__init__(model, args)
 
-    def solve(self, state_dict, disp = False):
+    def solve(self, state_dict, **kwargs):
         # For Newton-Raphson, the variables are Voltages and angles
         variables = state_dict['variables']
-        Vmag = variables['V']
-        theta = variables['theta']
+        Vmag = variables['V'].reshape(self.model.N, 1)
+        theta = variables['theta'].reshape(self.model.N, 1)
 
         # We create a vector of size 2*n containing the initial values of the variables ( theta1, theta2, ... thetan, v1, v2,.. vn)
-        x = np.concatenate((np.array([bus.theta for bus in self.model.buses]), np.array([bus.V for bus in self.model.buses]))).reshape((2*self.model.N, 1))
+        #x = np.concatenate((np.array([bus.theta for bus in self.model.buses]), np.array([bus.V for bus in self.model.buses]))).reshape((2*self.model.N, 1))
+        x = np.vstack((theta, Vmag))
 
         iters = 0
         err = 1E9
@@ -36,6 +37,10 @@ class NewtonRaphson(Iterative):
         # J4 will have size: (n_pq, n_pq)
         J4 = np.zeros((self.model.n_pq, self.model.n_pq))
 
+        # Vectors to store P and Q for each bus
+        P = np.zeros((self.model.N, 1))
+        Q = np.zeros((self.model.N, 1))
+
         results_table = []
         while err > self.tol and iters < self.max_iters:
             iters += 1
@@ -44,9 +49,9 @@ class NewtonRaphson(Iterative):
             theta = x[:self.model.N]
             V = x[self.model.N:]
 
-            # Compute powers
-            P = np.zeros((self.model.N, 1))
-            Q = np.zeros((self.model.N, 1))
+            # Reset power vectors
+            P.fill(0)
+            Q.fill(0)
             for i, bus_i in enumerate(self.model.buses):
                 for k, bus_k in enumerate(self.model.buses):
                     P[i] += (-G[i,k] + g[i,k])*V[i]**2 + V[i]*V[k]*(G[i,k]*np.cos(theta[i] - theta[k]) + B[i,k]*np.sin(theta[i] - theta[k]))

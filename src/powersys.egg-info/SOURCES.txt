@@ -10,7 +10,8 @@ src/powersys.egg-info/SOURCES.txt
 src/powersys.egg-info/dependency_links.txt
 src/powersys.egg-info/requires.txt
 src/powersys.egg-info/top_level.txt
-src/powersys/data/loader.py
+src/powersys/data/dataloader.py
+src/powersys/math/__init__.py
 src/powersys/math/explicit/RK4.py
 src/powersys/math/explicit/rk4.py
 src/powersys/math/iterative/__init__.py
@@ -47,4 +48,5 @@ tests/test_qd_values.py
 tests/test_rm_vectors.py
 tests/test_scipy-fsolve.py
 tests/test_terminal_values.py
+tests/test_txt-loader.py
 tests/test_yrm.py
