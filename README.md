@@ -47,3 +47,43 @@ Transmission line data:
 ```
 
 ## Loading Power System IEEE data
+```python
+import powersys as ps
+
+ieee9 = ps.datasets.IEEE9()
+
+model = ps.models.PowerSystem(data = ieee9)
+print(model)
+```
+
+```console
+PowerSystem model
+Buses: 9        Lines: 9        Generators: 0
+Frequency: 60   MVA-Base: 100
+
+Busbar data:
+  id    type      V    angle    Pgen    Qgen    Pload    Qload    Vmin    Vmax    Pgen_fixed    Qgen_fixed
+----  ------  -----  -------  ------  ------  -------  -------  ------  ------  ------------  ------------
+   0       3  1.04         0    0          0     0        0       0.95    1.05          0                0
+   1       2  1.025        0    1.63       0     0        0       0.95    1.05          1.63             0
+   2       2  1.025        0    0.85       0     0        0       0.95    1.05          0.85             0
+   3       0  1            0    0          0     0        0       0.95    1.05          0                0
+   4       0  1            0    0          0     1.25     0.5     0.95    1.05          0                0
+   5       0  1            0    0          0     0.9      0.3     0.95    1.05          0                0
+   6       0  1            0    0          0     0        0       0.95    1.05          0                0
+   7       0  1            0    0          0     1        0.35    0.95    1.05          0                0
+   8       0  1            0    0          0     0        0       0.95    1.05          0                0
+
+Transmission line data:
+  id    from_bus    to_bus       R       X  Z                     B    a    mva
+----  ----------  --------  ------  ------  ----------------  -----  ---  -----
+   0           0         3  0       0.0576  0.0576j           0        1    inf
+   1           1         6  0       0.0625  0.0625j           0        1    inf
+   2           2         8  0       0.0586  0.0586j           0        1    inf
+   3           3         4  0.01    0.085   (0.01+0.085j)     0.176    1    inf
+   4           3         5  0.017   0.092   (0.017+0.092j)    0.158    1    inf
+   5           4         6  0.032   0.161   (0.032+0.161j)    0.306    1    inf
+   6           5         8  0.039   0.17    (0.039+0.17j)     0.358    1    inf
+   7           6         7  0.0085  0.072   (0.0085+0.072j)   0.149    1    inf
+   8           7         8  0.0119  0.1008  (0.0119+0.1008j)  0.209    1    inf
+```
