@@ -20,7 +20,9 @@ class ObjectCollection(object):
     
     def __str__(self):
         #return "\n".join([str(item) for item in self.items])
-
+        if len(self.items) == 0:
+            return 'Empty ObjectCollection'
+        
         headers = list(self.items[0].__dict__.keys())
         table = []
         for item in self.items:

@@ -5,6 +5,7 @@ from ..objects.object_collection import ObjectCollection
 # from ..objects.transmission_line import Line
 # from ..objects.synchronous_machine import Generator
 from ..objects import *
+from ..data.dataloader import DataLoader
 from dataclasses import dataclass
 from simple_parsing.helpers import Serializable
 import json
@@ -23,19 +24,35 @@ class PowerSystemArgs(Serializable):
 
 class PowerSystem(object):
 
-    SLACK = 1
+    SLACK = 3
     PV = 2
-    PQ = 3
+    PQ = 0
 
-    def __init__(self, args: PowerSystemArgs = PowerSystemArgs()):
-        
-        self.args = args
+    def __init__(self,
+                 buses = ObjectCollection(),
+                 lines = ObjectCollection(),
+                 generators = ObjectCollection(),
+                 data = None,
+                 f = 60,
+                 mva_base = 100,
+                 v_base = 100):
 
-        self.f = self.args.f # Hz        
+        self.f = f # Hz        
         self.w = 2*np.pi*self.f
-        self.buses = args.buses
-        self.generators = args.generators
-        self.lines = args.lines
+        self.buses = buses
+        self.generators = generators
+        self.lines = lines
+
+        # If data provided, check that it is an instance of DataLoader
+        if data:
+            assert isinstance(data, DataLoader), "Invalid type for parameter 'data'. Expected DataLoader."
+
+            self.buses = data.buses
+            self.generators = data.generators
+            self.lines = data.lines
+
+        self.mva_base = mva_base
+        self.v_base = v_base
 
         self.Ybus = None
         self.Ybus_load = None
@@ -573,8 +590,8 @@ class PowerSystem(object):
         mva_multiplier = 1.0
         v_multiplier = 1.0
         if not pu:
-            mva_multiplier = self.args.mva_base
-            v_multiplier = self.args.v_base
+            mva_multiplier = self.mva_base
+            v_multiplier = self.v_base
 
         # create labels for each node
         node_labels = {}

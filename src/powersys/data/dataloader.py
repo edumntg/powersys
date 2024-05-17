@@ -7,14 +7,26 @@ class DataLoader(object):
         self.buses = buses
         self.lines = lines
         self.generators = generators
-    
+
+    def load(self):
+        assert not self.filename is None, "Invalid filename"
+
+        extension = self.filename.split(".")[1]
+        if extension == "txt":
+            new_loader = DataLoader.from_text(self.filename)
+            self.buses = new_loader.buses
+            self.lines = new_loader.lines
+            self.generators = new_loader.generators
+
+    def __getitem__(self, idx):
+        return self.buses[idx], self.lines[idx], self.generators[idx]
 
     @staticmethod
     def from_text(filename):
         """ NOTE: In order for this function to work, the .txt file must be in IEEE format """
 
         buses = ObjectCollection()
-        lines = ObjectCollection()
+        ps_lines = ObjectCollection()
         generators = ObjectCollection()
 
         with open(filename, "r") as f:
@@ -68,7 +80,7 @@ class DataLoader(object):
             X = float(row[7])
             B = float(row[8])
 
-            lines.add(Line(
+            ps_lines.add(Line(
                 from_bus = from_bus,
                 to_bus = to_bus,
                 R = R,
@@ -76,4 +88,4 @@ class DataLoader(object):
                 B = B
             ))
 
-        return DataLoader(filename, buses, lines, generators)
+        return DataLoader(filename, buses, ps_lines, generators)
