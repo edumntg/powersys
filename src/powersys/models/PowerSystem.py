@@ -612,4 +612,20 @@ class PowerSystem(object):
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
         plt.show()
 
+    def __str__(self):
+        output = "PowerSystem model\n"
+        output += f"Buses: {self.n_buses}\tLines: {self.n_lines}\tGenerators: {self.n_gens}\n"
+        output += f"Frequency: {self.f}\tMVA-Base: {self.mva_base}\n"
+        output += "\n"
+        output += "Busbar data:\n"
+        output += str(self.buses)
+        output += "\n\n"
+        output += "Transmission line data:\n"
+        output += str(self.lines)
+        output += "\n\n"
+        output += "Generators data:\n"
+        output += str(self.generators)
+
+        return output
+
         

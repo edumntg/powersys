@@ -89,3 +89,70 @@ class DataLoader(object):
             ))
 
         return DataLoader(filename, buses, ps_lines, generators)
+
+    @staticmethod
+    def from_raw(raw_str):
+        """ NOTE: In order for this function to work, the .txt file must be in IEEE format """
+
+        buses = ObjectCollection()
+        ps_lines = ObjectCollection()
+        generators = ObjectCollection()
+
+        lines = raw_str.split('\n')
+        # First line contains date, and others so we pop it
+        lines.pop(0)
+        # Second line contains title for bus data, so we pop it
+        lines.pop(0)
+        while True:
+            line = lines.pop(0).strip() # current line
+            # If line is equal to -999, end loop
+            if line == "-999":
+                break
+                
+            # Split
+            row = line.split()
+
+            # Get data of interest
+            id = int(row[0])
+            bus_type = int(row[5])
+            V = float(row[6])
+            angle = float(row[7])
+            Pload = float(row[8])
+            Qload = float(row[9])
+            Pgen = float(row[10])
+            Qgen = float(row[11])
+
+            buses.add(Busbar(
+                id = id,
+                type = bus_type,
+                V = V,
+                angle = angle,
+                Pgen = Pgen,
+                Qgen = Qgen,
+                Pload = Pload,
+                Qload = Qload
+            ))
+
+        # Next line contains ile for branch data
+        lines.pop(0)
+        while True:
+            line = lines.pop(0).strip()
+            if line == "-999":
+                break
+
+            row = line.split()
+            from_bus = int(row[0])
+            to_bus = int(row[1])
+            R = float(row[6])
+            X = float(row[7])
+            B = float(row[8])
+
+            ps_lines.add(Line(
+                from_bus = from_bus,
+                to_bus = to_bus,
+                R = R,
+                X = X,
+                B = B
+            ))
+
+        return DataLoader('', buses, ps_lines, generators)

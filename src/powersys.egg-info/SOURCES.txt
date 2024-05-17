@@ -12,6 +12,8 @@ src/powersys.egg-info/requires.txt
 src/powersys.egg-info/top_level.txt
 src/powersys/data/__init__.py
 src/powersys/data/dataloader.py
+src/powersys/datasets/__init__.py
+src/powersys/datasets/ieee9.py
 src/powersys/math/__init__.py
 src/powersys/math/explicit/RK4.py
 src/powersys/math/explicit/rk4.py
@@ -35,6 +37,7 @@ src/powersys/solvers/solver.py
 src/powersys/solvers/transient.py
 tests/test_construct-network.py
 tests/test_data-loader.py
+tests/test_dataset.py
 tests/test_gap_power.py
 tests/test_gauss-seidel.py
 tests/test_kron.py

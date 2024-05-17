@@ -15,8 +15,5 @@ model.add(Line(from_bus = 0, to_bus = 1, R = 0.1, X = 0.01))
 model.add(Line(from_bus = 0, to_bus = 2, R = 0.1, X = 0.01))
 model.add(Line(from_bus = 1, to_bus = 2, R = 0.1, X = 0.01))
 
-# Solve model
-solver = ps.solver.LF(model)
-solver.solve(method = 'newton-raphson', tol = 1e-6)
-
-model.plot()
+# model.plot()
+print(model)

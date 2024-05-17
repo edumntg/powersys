@@ -3,7 +3,8 @@ from . import (
     objects as objects,
     solvers as solvers,
     math as math,
-    data as data
+    data as data,
+    datasets as datasets
 )
 
 __version__="0.5.6"
