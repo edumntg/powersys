@@ -12,4 +12,4 @@ data.load()
 # Create model
 model = ps.models.PowerSystem(data = data)
 
-model.plot(save_filename = 'model_fig.png')
+model.plot()

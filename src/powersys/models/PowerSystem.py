@@ -12,6 +12,7 @@ import json
 from typing import Optional
 import networkx as nx
 import matplotlib.pyplot as plt
+import json
 
 @dataclass
 class PowerSystemArgs(Serializable):
@@ -631,5 +632,16 @@ class PowerSystem(object):
         output += str(self.generators)
 
         return output
+    
+    def save(self, out_path = None, state_dict = None):
+        assert not out_path is None, "Invalid output directory and file"
+        assert not state_dict is None, "Invalid state dictionary"
+
+        with open(out_path, "w") as f:
+            json.dump(state_dict, f)
+        
+        
+
+
 
         
