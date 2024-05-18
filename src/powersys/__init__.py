@@ -4,7 +4,6 @@ from . import (
     solvers as solvers,
     math as math,
     data as data,
-    datasets as datasets
+    datasets as datasets,
 )
-
 __version__="0.5.6"

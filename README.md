@@ -87,3 +87,17 @@ Transmission line data:
    7           6         7  0.0085  0.072   (0.0085+0.072j)   0.149    1    inf
    8           7         8  0.0119  0.1008  (0.0119+0.1008j)  0.209    1    inf
 ```
+
+## Visualize voltages and power flows in a graph
+Note: This graph is not the actual Power System schematic. It is used only to make it easier for users to see voltages/currents/powers.
+
+```python
+import powersys as ps
+
+ieee9 = ps.datasets.IEEE9()
+
+model = ps.models.PowerSystem(data = ieee9)
+model.plot()
+```
+
+![plot](./assets/ieee9_graph.png)

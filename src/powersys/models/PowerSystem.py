@@ -574,13 +574,13 @@ class PowerSystem(object):
 
         return G
     
-    def plot(self, pu = True, zero_index = True, radians = False):
+    def plot(self, pu = True, zero_index = True, radians = False, save_filename = '', **kwargs):
         G = self.get_graph()
 
         pos = nx.spring_layout(G)
 
         # Plot
-        plt.figure()
+        plt.figure(figsize=(15,15))
         nx.draw(G, with_labels = True)
 
         angle_multiplier = 1.0
@@ -607,9 +607,13 @@ class PowerSystem(object):
             edge_labels[(line.from_bus, line.to_bus)] = "P={:.4f}\nQ={:.4f}".format(P*mva_multiplier, Q*mva_multiplier)
 
         # node_labels = nx.get_node_attributes(G, 'P')
-        nx.draw_networkx_labels(G, pos, labels = node_labels)
+        nx.draw_networkx_labels(G, pos, labels = node_labels, **kwargs)
         # edge_labels = nx.get_edge_attributes(G, 'P')
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, **kwargs)
+
+        if save_filename:
+            plt.savefig(save_filename, **kwargs)
+
         plt.show()
 
     def __str__(self):
