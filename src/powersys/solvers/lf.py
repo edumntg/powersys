@@ -30,6 +30,7 @@ class LF(Solver):
 
         # Now, solve
         solver_model, variables = self.state_dict()['solver'], self.state_dict()['variables']
+        
         if method == "default":
             solver_model.solve(disp = disp)
             V = np.array([variables['V'][bus.id][0] for bus in self.model.buses])

@@ -247,11 +247,12 @@ class PowerSystem(object):
         if self.Yrm is None:
             raise "No YRM matrix created"
         
-        Vrm = np.zeros((2*self.non_PQ_N, 1))
-        Irm = np.zeros((2*self.non_PQ_N, 1))
+        non_pq = self.N - self.n_pq
+        Vrm = np.zeros((2*non_pq, 1))
+        Irm = np.zeros((2*non_pq, 1))
 
         for bus in self.buses:
-            if self.get_gen_by_bus(bus.id) or bus.reference: # not PQ
+            if self.get_gen_by_bus(bus.id) or bus.type == PowerSystem.SLACK: # not PQ
                 # Calculate complex expression for voltage at this bus
                 V_rectangular = bus.V*(np.cos(bus.theta) + 1j*np.sin(bus.theta))
                 Vrm[2*bus.id] = np.real(V_rectangular)
@@ -438,7 +439,7 @@ class PowerSystem(object):
     def non_PQ_N(self):
         N = 0
         for bus in self.buses:
-            if self.get_gen_by_bus(bus.id) or bus.reference: # bus is not PQ
+            if self.get_gen_by_bus(bus.id) or bus.type == PowerSystem.SLACK: # bus is not PQ
                 N += 1
 
         return N

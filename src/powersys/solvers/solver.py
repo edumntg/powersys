@@ -94,10 +94,10 @@ class Solver:
         Qflow = solver.Array(solver.Var, dim = (self.model.n_buses, self.model.n_buses))
 
         # On/Off for lines
-        l = solver.Array(solver.Var, dim = (self.model.n_lines,), lb = 0, ub = 1, value = 1, integer = True)
+        l = solver.Array(solver.Var, dim = (self.model.n_lines,), lb = 1, ub = 1, value = 1, integer = True)
 
         # On/Off for generators
-        lg = solver.Array(solver.Var, dim = (self.model.n_gens,), lb = 0, ub = 1, value = 1, integer = True)
+        lg = solver.Array(solver.Var, dim = (self.model.n_gens,), lb = 1, ub = 1, value = 1, integer = True)
 
         state_dict = {
             'solver': solver,
@@ -155,7 +155,7 @@ class Solver:
         ])
 
         m.Equations([
-            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == PowerSystem.SLACK
+            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type != PowerSystem.PQ
         ])
 
         if self.model.generators.some(lambda gen: gen.active == 0):

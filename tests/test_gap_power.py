@@ -12,16 +12,16 @@ class TestGapPowerCalculation(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         #  Load system
-        args = ps.model.PowerSystemArgs(
+        args = ps.models.PowerSystemArgs(
             f = 60,
-            buses = ps.model.PowerSystem.load_buses(CWD + '/sample_data/ieee9_buses.csv'),
-            lines = ps.model.PowerSystem.load_lines(CWD + '/sample_data/ieee9_lines.csv'),
-            generators = ps.model.PowerSystem.load_gens(CWD + '/sample_data/ieee9_gens.csv')
+            buses = ps.models.PowerSystem.load_buses(CWD + '/../sample_data/ieee9_buses.csv'),
+            lines = ps.models.PowerSystem.load_lines(CWD + '/../sample_data/ieee9_lines.csv'),
+            generators = ps.models.PowerSystem.load_gens(CWD + '/../sample_data/ieee9_gens.csv')
         )
 
-        system = ps.model.PowerSystem(args)
+        system = ps.models.PowerSystem(buses = args.buses, lines = args.lines, generators = args.generators)
 
-        solver = ps.solver.LF(system)
+        solver = ps.solvers.LF(system)
         solver.solve(disp = False)
 
         # Now, construct the Ybus-load
