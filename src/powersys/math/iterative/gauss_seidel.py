@@ -39,13 +39,13 @@ class GaussSeidel(Iterative):
                         PYV += self.model.Ybus[bus.id, bus2.id]*V[bus2.id]
                 
                 is_pv = self.model.generators.some(lambda x: x.bus == bus.id)
-                if is_pv:
+                if bus.type == PowerSystem.PV:
                     Q[bus.id] = -np.imag(np.conj(V[bus.id])*(PYV + self.model.Ybus[bus.id, bus.id]*V[bus.id]))
 
                 # Compute new voltages
                 V[bus.id] = (1/self.model.Ybus[bus.id, bus.id])*((P[bus.id] - 1j*Q[bus.id])/np.conj(V[bus.id]) - PYV)
 
-                if is_pv:
+                if bus.type == PowerSystem.PV:
                     # Maintain voltage amplite
                     V[bus.id] = np.abs(Vprev[bus.id])*(np.cos(np.angle(V[bus.id])) + 1j*np.sin(np.angle(V[bus.id])))
 
