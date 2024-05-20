@@ -43,6 +43,16 @@ class OPF(Solver):
 
         super().construct_model_solver()
 
+        # For OPF, set all Pgen_fixed and Qgen_fixed variables equal to zero
+        for bus in self.model.buses:
+            bus.Pgen_fixed = 0
+            self.state_dict()['variables']['Pgen_fixed'][bus.id].VALUE = 0
+
+        # Reactive power generated
+        for bus in self.model.buses:
+            bus.Qgen_fixed = 0
+            self.state_dict()['variables']['Qgen_fixed'][bus.id].VALUE = 0
+
         # Create objective function
         self.state_dict()['solver'].Obj(self.__opf_objective())
 
