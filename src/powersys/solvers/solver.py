@@ -155,7 +155,7 @@ class Solver:
         ])
 
         m.Equations([
-            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type != PowerSystem.PQ
+            self.optim_constr_fixed_bus_magnitude(bus) for bus in self.model.buses if bus.type == PowerSystem.SLACK
         ])
 
         if self.model.generators.some(lambda gen: gen.active == 0):
@@ -166,8 +166,8 @@ class Solver:
     def optim_constr_kirchoff_P(self, bus):
         variables = self.state_dict()['variables']
         Pflow = 0.0
-        Pgen = variables['Pgen_fixed'][bus.id]
-        #Pgen = 0.0
+        #Pgen = variables['Pgen_fixed'][bus.id]
+        Pgen = 0.0
 
         # Find if there is a generator connected at this bus
         for gen in self.model.generators:
@@ -187,8 +187,8 @@ class Solver:
     def optim_constr_kirchoff_Q(self, bus):
         variables = self.state_dict()['variables']
         Qflow = 0.0
-        Qgen = variables['Qgen_fixed'][bus.id]
-        #Qgen = 0.0
+        #Qgen = variables['Qgen_fixed'][bus.id]
+        Qgen = 0.0
 
         # Find if there is a generator connected at this bus
         for gen in self.model.generators:

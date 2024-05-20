@@ -3,7 +3,15 @@ class Line(object):
 
     PUBLIC_ID = 0
 
-    def __init__(self, id = None, from_bus = None, to_bus = None, R = np.inf, X = np.inf, B = 0.0, a = 1.0, mva = np.inf):
+    def __init__(self,
+                 id = None,
+                 from_bus = None,
+                 to_bus = None,
+                 R = np.inf,
+                 X = np.inf,
+                 B = 0.0,
+                 a = 1.0,
+                 mva = np.inf):
         if id is None:
             id = Line.PUBLIC_ID
             Line.PUBLIC_ID += 1

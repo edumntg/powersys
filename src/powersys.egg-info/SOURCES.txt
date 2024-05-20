@@ -36,4 +36,7 @@ src/powersys/solvers/opf.py
 src/powersys/solvers/solver.py
 src/powersys/solvers/transient.py
 tests/test_gap_power.py
+tests/test_gekko.py
+tests/test_gs.py
 tests/test_kron.py
+tests/test_nr.py
